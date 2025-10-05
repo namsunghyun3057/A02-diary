@@ -1,0 +1,9 @@
+전기프 명령어
+
+삭제, ㅅㅈ, -, delete, d
+열람, ㅇㄹ, #, view, v
+검색, ㄱㅅ, /, search, s
+조정, ㅈㅈ, !, reschedule, r (시간)
+변경, ㅂㄱ, @, change, c (내용)
+추가, ㅊㄱ, +, add, a
+종료, ㅈㄹ, ., quite, q
