@@ -484,6 +484,20 @@ def main_prompt():
                 continue
             try:
                 new_schedule = Schedule(factor)
+
+                # 기간 겹침 판단
+                overlap_schedule = None
+                for sch in schedules:
+                    if new_schedule.period.overlaps(sch.period):
+                        overlap_schedule = sch
+                        break
+                if overlap_schedule:
+                    schedules.sort(key=lambda sch: sch.period.start.to_datetime())
+                    overlap_index = schedules.index(overlap_schedule) + 1
+                    print(f"오류: 다음 일정과 기간이 겹칩니다!")
+                    print(f"-> {overlap_index} {overlap_schedule}")
+                    continue
+
                 schedules.append(new_schedule)
                 print("일정이 추가되었습니다!")
                 save_schedules(schedules)
