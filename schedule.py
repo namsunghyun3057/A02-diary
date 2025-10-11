@@ -1,5 +1,6 @@
 import os
 import re
+import sys
 from datetime import date
 from datetime import datetime
 
@@ -384,10 +385,21 @@ def check_data_file():
     """데이터 파일 존재 확인 및 생성"""
     if not os.path.exists(DATA_FILE):
         print("데이터 파일이 없습니다. 새로 생성합니다...")
-        with open(DATA_FILE, "w", encoding="utf-8") as f:
-            pass
+        try:
+            with open(DATA_FILE, "w", encoding="utf-8") as f:
+                pass
+        except PermissionError:
+            print(
+                "오류: 현 경로에 데이터 파일 생성을 실패했습니다. 프로그램을 종료합니다."
+            )
+            sys.exit(1)
     else:
         print("데이터 파일이 확인되었습니다.")
+
+    if not os.access(DATA_FILE, os.R_OK | os.W_OK):
+        print(f"{os.path.abspath(DATA_FILE)}")
+        print("에 대한 입출력 권한이 없습니다. 프로그램을 종료합니다.")
+        sys.exit(1)
 
 
 def load_schedules() -> list[Schedule]:
