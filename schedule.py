@@ -658,6 +658,29 @@ def main_prompt():
                     print("올바른 인자의 형태: <열람> 또는 <열람> <공백열1> <일정시간>")
                     print(f"세부 오류: {e}")
 
+        # 검색 기능
+        elif cmd in search_command_list:
+            if not schedules:
+                print("기록된 일정이 존재하지 않습니다!")
+                continue
+
+            search_content = factor
+
+            if not search_content:
+                print_schedules(schedules)
+            else:
+                found_schedules = []
+                for sch in schedules:
+                    if search_content in sch.content.value:
+                        found_schedules.append(sch)
+
+                if not found_schedules:
+                    print(
+                        f"일정 내용에 '{search_content}'을(를) 포함하는 일정이 없습니다!"
+                    )
+                else:
+                    print_schedules(found_schedules)
+
         # 삭제 기능
         elif cmd in delete_command_list:
             if not factor:
