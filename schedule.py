@@ -470,13 +470,58 @@ add_command_list = ["추가", "ㅊㄱ", "add", "a", "+"]
 quit_command_list = ["종료", "ㅈㄹ", "quit", "q", "."]
 # endregion
 
+# region 명령어 함수
+
+
+def add(schedules, factor) -> list[Schedule]:
+    new_schedule = Schedule(factor)
+    for idx, sch in enumerate(schedules):
+        if new_schedule.period.overlaps(sch.period):
+            print("오류: 다음 일정과 기간이 겹칩니다!")
+            print("-> ", idx + 1, sch)
+            break
+    else:
+        schedules.append(new_schedule)
+        print("일정이 추가되었습니다!")
+        save_schedules(schedules)
+    return schedules
+
+
+def reschedule(schedules, factor) -> list[Schedule]:
+    r_factors = split_whitespace_1(factor, 1)
+    idx = int(r_factors[0]) - 1
+    r_sch = r_factors[1]
+    schedule = schedules[idx]
+    comsch = Schedule(r_sch)
+
+    for idx, sch in enumerate(schedules):
+        if comsch.period.overlaps(sch.period):
+            print("오류: 다음 일정과 기간이 겹칩니다!")
+            print("-> ", idx + 1, sch)
+            break
+    else:
+        schedule.period = comsch.period
+        save_schedules(schedules)
+        print("일정이 다음과 같이 조정되었습니다!")
+        print("(주의: 일정 순서의 변동으로 인해 해당 일정의 번호가 변경되었습니다!)")
+        schedules = load_schedules()
+        for idx, sch in enumerate(schedules):
+            if sch.period.start.to_datetime() == comsch.period.start.to_datetime():
+                print(idx + 1, sch)
+                break
+
+    return schedules
+
+
+# endregion
+
 
 # region 메인 프롬프트
 def main_prompt():
     check_data_file()
-    schedules = load_schedules()
 
     while True:
+        schedules = load_schedules()
         prompt = input(">>> ")
         prompt = strip_whitespace_0(prompt)
 
@@ -488,25 +533,18 @@ def main_prompt():
             continue
 
         cmd = parts[0]
+        factor = None
 
         if len(parts) == 2:
             factor = parts[1]
 
         if cmd in add_command_list:
             if not factor:
-                print("형식: add <기간> <일정내용>")
+                print("오류: 추가 명령어의 인자인 일정을 다시 확인해 주십시오!")
+                print("올바른 인자의 형태: <기간> <공백열1> <일정내용>")
                 continue
             try:
-                new_schedule = Schedule(factor)
-                for idx, sch in enumerate(schedules):
-                    if new_schedule.period.overlaps(sch.period):
-                        print("오류: 다음 일정과 기간이 겹칩니다!")
-                        print("-> ", idx + 1, sch)
-                        break
-                    else:
-                        schedules.append(new_schedule)
-                        print("일정이 추가되었습니다!")
-                        save_schedules(schedules)
+                schedules = add(schedules, factor)
             except Exception as e:
                 print(f"오류: {e}")
 
@@ -516,7 +554,15 @@ def main_prompt():
             else:
                 for i, sch in enumerate(schedules, start=1):
                     print(f"{i}: {sch}")
-
+        elif cmd in reschedule_command_list:
+            if not factor:
+                print("오류: 조정 명령어의 인자인 기간을 다시 확인해 주십시오!")
+                print("올바른 인자의 형태: <일정번호> <공백열1> <기간>")
+                continue
+            try:
+                schedules = reschedule(schedules, factor)
+            except Exception as e:
+                print(f"오류: {e}")
         elif cmd in quit_command_list:
             print("프로그램을 종료합니다.")
             break
