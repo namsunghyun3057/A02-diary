@@ -498,9 +498,15 @@ def main_prompt():
                 continue
             try:
                 new_schedule = Schedule(factor)
-                schedules.append(new_schedule)
-                print("일정이 추가되었습니다!")
-                save_schedules(schedules)
+                for idx, sch in enumerate(schedules):
+                    if new_schedule.period.overlaps(sch.period):
+                        print("오류: 다음 일정과 기간이 겹칩니다!")
+                        print("-> ", idx + 1, sch)
+                        break
+                    else:
+                        schedules.append(new_schedule)
+                        print("일정이 추가되었습니다!")
+                        save_schedules(schedules)
             except Exception as e:
                 print(f"오류: {e}")
 
