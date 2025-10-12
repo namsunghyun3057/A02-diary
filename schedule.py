@@ -2,6 +2,7 @@ import os
 import re
 from datetime import date
 from datetime import datetime
+from calendar import monthrange
 
 
 # region 문자열 처리 함수
@@ -373,6 +374,80 @@ class Schedule:
 
 
 # class 일정시간 추가해야 합니다
+class ScheduleTime:
+    """
+    일정시간. <년>, <년/월>, <날짜> 형식을 파싱하고 Period로 변환
+    """
+
+    def __init__(self, s: str):
+        self._parse(strip_whitespace_0(s))
+
+    def _parse(self, s: str):
+        # <날짜> 그 자체 (년/월/일)
+        try:
+            temp_date = Date(s)
+            self.year = temp_date.year
+            self.month = temp_date.month
+            self.day = temp_date.day
+            self.mode = "day"
+            return
+        except ValueError:
+            pass
+
+        # <년><날짜구분자><월>
+        try:
+            parts = re.split(r"[-/]", s)
+            if len(parts) == 2:
+                self.year = Year(parts[0])
+                self.month = Month(parts[1])
+                self.day = None
+                self.mode = "month"
+                return
+        except ValueError:
+            pass
+
+        # <년> 그 자체
+        try:
+            self.year = Year(s)
+            self.month = None
+            self.day = None
+            self.mode = "year"
+            return
+        except ValueError:
+            pass
+
+        raise ValueError(f"일정시간 형식이 잘못되었습니다. (입력: {s})")
+
+    def to_period(self) -> Period:
+        """일정시간이 의미하는 기간을 Period 객체로 반환"""
+        _year = self.year.value
+
+        if self.mode == "day":
+            # Day: 00:00 ~ 23:59
+            _month = self.month.value
+            _day = self.day.value
+            start_dt_str = f"{_year}/{_month}/{_day} 00:00"
+            end_dt_str = f"{_year}/{_month}/{_day} 23:59"
+
+        elif self.mode == "month":
+            # Month: Month/1 00:00 ~ Last day of Month 23:59
+            _month = self.month.value
+            _day_count = monthrange(_year, _month)[1]
+
+            start_dt_str = f"{_year}/{_month}/1 00:00"
+            end_dt_str = f"{_year}/{_month}/{_day_count} 23:59"
+
+        elif self.mode == "year":
+            # Year: Year/1/1 00:00 ~ Year/12/31 23:59
+            start_dt_str = f"{_year}/1/1 00:00"
+            end_dt_str = f"{_year}/12/31 23:59"
+
+        else:
+            raise ValueError("유효하지 않은 일정시간 모드입니다.")
+
+        return Period(f"{start_dt_str}~{end_dt_str}")
+
+
 # endregion
 
 
@@ -504,12 +579,33 @@ def main_prompt():
             except Exception as e:
                 print(f"오류: {e}")
 
+        # 열람 기능
         elif cmd in view_command_list:
             if not schedules:
-                print("등록된 일정이 없습니다.")
+                print("기록된 일정이 존재하지 않습니다!")
+                continue
+
+            if not factor:
+                print_schedules(schedules)
             else:
-                for i, sch in enumerate(schedules, start=1):
-                    print(f"{i}: {sch}")
+                try:
+                    schedule_time = ScheduleTime(factor)
+                    search_period = schedule_time.to_period()
+                    found_schedules = []
+                    for sch in schedules:
+                        if sch.period.overlaps(search_period):
+                            found_schedules.append(sch)
+                    if not found_schedules:
+                        print(f" '{schedule_time}'에 겹치는 일정이 없습니다!")
+                    else:
+                        print_schedules(found_schedules)
+
+                except ValueError as e:
+                    print(
+                        f"오류: 열람 명령어의 인자인 일정시간을 다시 확인해 주십시오!"
+                    )
+                    print("올바른 인자의 형태: <열람> 또는 <열람> <공백열1> <일정시간>")
+                    print(f"세부 오류: {e}")
 
         # 삭제 기능
         elif cmd in delete_command_list:
@@ -539,13 +635,6 @@ def main_prompt():
                 print("오류: 일정 번호는 숫자여야 합니다!")
             except Exception as e:
                 print(f"오류: 일정을 삭제하는 중 문제가 발생했습니다! ({e})")
-
-        elif cmd in quit_command_list:
-            print("프로그램을 종료합니다.")
-            break
-
-        else:
-            print("올바른 명령어를 입력하세요.")
 
 
 if __name__ == "__main__":
