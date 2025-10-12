@@ -439,6 +439,8 @@ def load_schedules() -> list[Schedule]:
 
 def save_schedules(schedules: list[Schedule]):
     """일정 목록을 파일에 저장"""
+    schedules = sorted(schedules, key=lambda sch: sch.period.start.to_datetime())
+
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         for sch in schedules:
             start = sch.period.start
