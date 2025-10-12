@@ -497,11 +497,13 @@ def load_schedules() -> list[Schedule]:
                     schedules.append(Schedule(schedule))
                 except Exception as e:
                     print(f"[데이터 오류] {e}")
+    schedules.sort(key=lambda sch: sch.period.start.to_datetime())
     return schedules
 
 
 def save_schedules(schedules: list[Schedule]):
     """일정 목록을 파일에 저장"""
+    schedules.sort(key=lambda sch: sch.period.start.to_datetime())
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         for sch in schedules:
             start = sch.period.start
@@ -529,6 +531,49 @@ reschedule_command_list = ["조정", "ㅈㅈ", "reschedule", "r", "!"]
 change_command_list = ["변경", "ㅂㄱ", "change", "c", "@"]
 add_command_list = ["추가", "ㅊㄱ", "add", "a", "+"]
 quit_command_list = ["종료", "ㅈㄹ", "quit", "q", "."]
+# endregion
+
+
+# region 유틸리티 함수
+
+
+def print_schedules(schedules: list[Schedule]):
+    """일정 목록을 일정 번호와 함께 출력"""
+    if not schedules:
+        print("등록된 일정이 없습니다.")
+    else:
+        # 출력 전, 일정을 시작 시각 순으로 다시 정렬 (명령어 로직에 따라 순서가 꼬일 수 있으므로)
+        schedules.sort(key=lambda sch: sch.period.start.to_datetime())
+        for i, sch in enumerate(schedules, start=1):
+            # 일정 출력 형식에 맞게 출력: "일정번호: 일정내용"
+            # Schedule.__str__에서 이미 기간을 포함한 형식으로 출력됨
+            print(f"{i}: {sch}")
+
+
+def print_command_list():
+    """올바른 명령어 리스트 출력"""
+    print("올바른 명령어를 입력해 주십시오!")
+    print(
+        "--------------------------------------------------------------------------------"
+    )
+    print("삭제 | 열람 | 검색 | 조정 | 변경 | 추가 | 종료")
+    print(
+        "--------------------------------------------------------------------------------"
+    )
+    print("ㅅㅈ | ㅇㄹ | ㄱㅅ | ㅈㅈ | ㅂㄱ | ㅊㄱ | ㅈㄹ")
+    print(
+        "--------------------------------------------------------------------------------"
+    )
+    print("delete | view | search | reschedule | change | add | quit")
+    print(
+        "--------------------------------------------------------------------------------"
+    )
+    print("- | # | / | ! | @ | + | .")
+    print(
+        "--------------------------------------------------------------------------------"
+    )
+
+
 # endregion
 
 
