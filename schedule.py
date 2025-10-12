@@ -595,8 +595,14 @@ def main_prompt():
 
         cmd = parts[0]
 
-        if len(parts) == 2:
-            factor = parts[1]
+        # factor 변수 초기화
+        """
+        '>>> view'로 테스트한 결과
+        해당 테스트처럼 part의 인덱스가 0밖에 없을 경우에도 factor를 사용해야 하는 경우가 존재합니다.
+        하나, factor 변수가 if 내에서만 정의되어 위와 같은 상황에 에러가 발생하는 것을 확인했습니다.
+        따라서 else를 추가하여 초기화하는 코드로 변경하였습니다.
+        """
+        factor = parts[1] if len(parts) == 2 else ""
 
         if cmd in add_command_list:
             if not factor:
