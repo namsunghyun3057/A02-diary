@@ -567,6 +567,7 @@ def main_prompt():
     check_data_file()
 
     while True:
+        # 일정이 수정되면 index 값이 변경되어야해서 while문 안으로 load_schedules함수를 넣었습니다.
         schedules = load_schedules()
         prompt = input(">>> ")
         prompt = strip_whitespace_0(prompt)
@@ -578,6 +579,7 @@ def main_prompt():
         if len(parts) < 1:  # 명령어 없음
             continue
 
+        # factor none 값 지정하여 if문에 오류가 안나게 했습니다.
         cmd = parts[0]
         factor = None
 
@@ -598,13 +600,16 @@ def main_prompt():
                     print(f"{i}: {sch}")
         elif cmd in reschedule_command_list:
             if not factor:
-                print("오류: 조정 명령어의 인자인 기간을 다시 확인해 주십시오!")
+                print("오류: 조정 명령어의 인자를 다시 확인해 주십시오!")
                 print("올바른 인자의 형태: <일정번호> <공백열1> <기간>")
                 continue
             schedules = reschedule(schedules, factor)
         elif cmd in change_command_list:
             if not factor:
-                print("오류: ")
+                print("오류: 변경 명령어의 인자를 다시 확인해 주십시오!")
+                print(
+                    "올바른 인자의 형태: <일정번호> 혹은 <일정번호> <공백열1> <일정내용>"
+                )
                 continue
             change(schedules, factor)
         elif cmd in quit_command_list:
