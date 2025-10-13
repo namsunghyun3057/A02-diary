@@ -583,27 +583,31 @@ def main_prompt():
         cmd = parts[0]
         factor = parts[1] if len(parts) == 2 else ""
 
-        if len(parts) == 2:
-            factor = parts[1]
-
+        # 추가 기능
         if cmd in add_command_list:
             if not factor:
                 print("오류: 추가 명령어의 인자인 일정을 다시 확인해 주십시오!")
                 print("올바른 인자의 형태: <기간> <공백열1> <일정내용>")
                 continue
             schedules = add(schedules, factor)
+
+        # 열람 기능
         elif cmd in view_command_list:
             if not schedules:
                 print("등록된 일정이 없습니다.")
             else:
                 for i, sch in enumerate(schedules, start=1):
                     print(f"{i}: {sch}")
+
+        # 조정 기능
         elif cmd in reschedule_command_list:
             if not factor:
                 print("오류: 조정 명령어의 인자를 다시 확인해 주십시오!")
                 print("올바른 인자의 형태: <일정번호> <공백열1> <기간>")
                 continue
             schedules = reschedule(schedules, factor)
+
+        # 변경 기능
         elif cmd in change_command_list:
             if not factor:
                 print("오류: 변경 명령어의 인자를 다시 확인해 주십시오!")
@@ -612,6 +616,8 @@ def main_prompt():
                 )
                 continue
             schedules = change(schedules, factor)
+
+        # 종료 기능
         elif cmd in quit_command_list:
             print("프로그램을 종료합니다.")
             break
