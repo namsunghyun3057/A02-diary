@@ -3,6 +3,7 @@ import re
 import sys
 from datetime import date
 from datetime import datetime
+from calendar import monthrange
 
 
 # region 문자열 처리 함수
@@ -374,6 +375,80 @@ class Schedule:
 
 
 # class 일정시간 추가해야 합니다
+class ScheduleTime:
+    """
+    일정시간. <년>, <년/월>, <날짜> 형식을 파싱하고 Period로 변환
+    """
+
+    def __init__(self, s: str):
+        self._parse(strip_whitespace_0(s))
+
+    def _parse(self, s: str):
+        # <날짜> 그 자체 (년/월/일)
+        try:
+            temp_date = Date(s)
+            self.year = temp_date.year
+            self.month = temp_date.month
+            self.day = temp_date.day
+            self.mode = "day"
+            return
+        except ValueError:
+            pass
+
+        # <년><날짜구분자><월>
+        try:
+            parts = re.split(r"[-/]", s)
+            if len(parts) == 2:
+                self.year = Year(parts[0])
+                self.month = Month(parts[1])
+                self.day = None
+                self.mode = "month"
+                return
+        except ValueError:
+            pass
+
+        # <년> 그 자체
+        try:
+            self.year = Year(s)
+            self.month = None
+            self.day = None
+            self.mode = "year"
+            return
+        except ValueError:
+            pass
+
+        raise ValueError(f"일정시간 형식이 잘못되었습니다. (입력: {s})")
+
+    def to_period(self) -> Period:
+        """일정시간이 의미하는 기간을 Period 객체로 반환"""
+        _year = self.year.value
+
+        if self.mode == "day":
+            # Day: 00:00 ~ 23:59
+            _month = self.month.value
+            _day = self.day.value
+            start_dt_str = f"{_year}/{_month}/{_day} 00:00"
+            end_dt_str = f"{_year}/{_month}/{_day} 23:59"
+
+        elif self.mode == "month":
+            # Month: Month/1 00:00 ~ Last day of Month 23:59
+            _month = self.month.value
+            _day_count = monthrange(_year, _month)[1]
+
+            start_dt_str = f"{_year}/{_month}/1 00:00"
+            end_dt_str = f"{_year}/{_month}/{_day_count} 23:59"
+
+        elif self.mode == "year":
+            # Year: Year/1/1 00:00 ~ Year/12/31 23:59
+            start_dt_str = f"{_year}/1/1 00:00"
+            end_dt_str = f"{_year}/12/31 23:59"
+
+        else:
+            raise ValueError("유효하지 않은 일정시간 모드입니다.")
+
+        return Period(f"{start_dt_str}~{end_dt_str}")
+
+
 # endregion
 
 
@@ -434,6 +509,7 @@ def load_schedules() -> list[Schedule]:
                     schedules.append(Schedule(schedule))
                 except Exception as e:
                     print(f"[데이터 오류] {e}")
+    schedules.sort(key=lambda sch: sch.period.start.to_datetime())
     return schedules
 
 
@@ -562,6 +638,49 @@ def change(schedules, factor):
 # endregion
 
 
+# region 유틸리티 함수
+
+
+def print_schedules(schedules: list[Schedule]):
+    """일정 목록을 일정 번호와 함께 출력"""
+    if not schedules:
+        print("등록된 일정이 없습니다.")
+    else:
+        # 출력 전, 일정을 시작 시각 순으로 다시 정렬 (명령어 로직에 따라 순서가 꼬일 수 있으므로)
+        schedules.sort(key=lambda sch: sch.period.start.to_datetime())
+        for i, sch in enumerate(schedules, start=1):
+            # 일정 출력 형식에 맞게 출력: "일정번호: 일정내용"
+            # Schedule.__str__에서 이미 기간을 포함한 형식으로 출력됨
+            print(f"{i}: {sch}")
+
+
+def print_command_list():
+    """올바른 명령어 리스트 출력"""
+    print("올바른 명령어를 입력해 주십시오!")
+    print(
+        "--------------------------------------------------------------------------------"
+    )
+    print("삭제 | 열람 | 검색 | 조정 | 변경 | 추가 | 종료")
+    print(
+        "--------------------------------------------------------------------------------"
+    )
+    print("ㅅㅈ | ㅇㄹ | ㄱㅅ | ㅈㅈ | ㅂㄱ | ㅊㄱ | ㅈㄹ")
+    print(
+        "--------------------------------------------------------------------------------"
+    )
+    print("delete | view | search | reschedule | change | add | quit")
+    print(
+        "--------------------------------------------------------------------------------"
+    )
+    print("- | # | / | ! | @ | + | .")
+    print(
+        "--------------------------------------------------------------------------------"
+    )
+
+
+# endregion
+
+
 # region 메인 프롬프트
 def main_prompt():
     check_data_file()
@@ -581,6 +700,13 @@ def main_prompt():
 
         # factor none 값 지정하여 if문에 오류가 안나게 했습니다.
         cmd = parts[0]
+        # factor 변수 초기화
+        """
+        '>>> view'로 테스트한 결과
+        해당 테스트처럼 part의 인덱스가 0밖에 없을 경우에도 factor를 사용해야 하는 경우가 존재합니다.
+        하나, factor 변수가 if 내에서만 정의되어 위와 같은 상황에 에러가 발생하는 것을 확인했습니다.
+        따라서 else를 추가하여 초기화하는 코드로 변경하였습니다.
+        """
         factor = parts[1] if len(parts) == 2 else ""
 
         # 추가 기능
@@ -589,15 +715,108 @@ def main_prompt():
                 print("오류: 추가 명령어의 인자인 일정을 다시 확인해 주십시오!")
                 print("올바른 인자의 형태: <기간> <공백열1> <일정내용>")
                 continue
-            schedules = add(schedules, factor)
+
+            try:
+                new_schedule = Schedule(factor)
+
+                # 기간 겹침 판단
+                overlap_schedule = None
+                for sch in schedules:
+                    if new_schedule.period.overlaps(sch.period):
+                        overlap_schedule = sch
+                        break
+                if overlap_schedule:
+                    schedules.sort(key=lambda sch: sch.period.start.to_datetime())
+                    overlap_index = schedules.index(overlap_schedule) + 1
+                    print(f"오류: 다음 일정과 기간이 겹칩니다!")
+                    print(f"-> {overlap_index} {overlap_schedule}")
+                    continue
+
+                schedules.append(new_schedule)
+                print("일정이 추가되었습니다!")
+                save_schedules(schedules)
+            except Exception as e:
+                print(f"오류: {e}")
+
+        # 삭제 기능
+        elif cmd in delete_command_list:
+            if not factor:
+                print("오류: 삭제 명령어의 인자인 일정번호를 다시 확인해 주십시오!")
+                print("올바른 인자의 형태: <삭제> <공백열1> <일정번호>")
+                continue
+
+            if not schedules:
+                print("기록된 일정이 없어 삭제할 수 없습니다!")
+                continue
+            try:
+                delete_index = int(factor)
+
+                if 1 <= delete_index <= len(schedules):
+                    deleted_schedule = schedules.pop(delete_index - 1)
+                    print(
+                        f"일정 [{delete_index}: {deleted_schedule}]이(가) 삭제되었습니다!"
+                    )
+                    save_schedules(schedules)
+                else:
+                    print(
+                        f"오류: 일정 번호가 유효한 범위(1 ~ {len(schedules)})를 벗어났습니다!"
+                    )
+
+            except ValueError:
+                print("오류: 일정 번호는 숫자여야 합니다!")
+            except Exception as e:
+                print(f"오류: 일정을 삭제하는 중 문제가 발생했습니다! ({e})")
 
         # 열람 기능
         elif cmd in view_command_list:
             if not schedules:
-                print("등록된 일정이 없습니다.")
+                print("기록된 일정이 존재하지 않습니다!")
+                continue
+
+            if not factor:
+                print_schedules(schedules)
             else:
-                for i, sch in enumerate(schedules, start=1):
-                    print(f"{i}: {sch}")
+                try:
+                    schedule_time = ScheduleTime(factor)
+                    search_period = schedule_time.to_period()
+                    found_schedules = []
+                    for sch in schedules:
+                        if sch.period.overlaps(search_period):
+                            found_schedules.append(sch)
+                    if not found_schedules:
+                        print(f" '{schedule_time}'에 겹치는 일정이 없습니다!")
+                    else:
+                        print_schedules(found_schedules)
+
+                except ValueError as e:
+                    print(
+                        f"오류: 열람 명령어의 인자인 일정시간을 다시 확인해 주십시오!"
+                    )
+                    print("올바른 인자의 형태: <열람> 또는 <열람> <공백열1> <일정시간>")
+                    print(f"세부 오류: {e}")
+
+        # 검색 기능
+        elif cmd in search_command_list:
+            if not schedules:
+                print("기록된 일정이 존재하지 않습니다!")
+                continue
+
+            search_content = factor
+
+            if not search_content:
+                print_schedules(schedules)
+            else:
+                found_schedules = []
+                for sch in schedules:
+                    if search_content in sch.content.value:
+                        found_schedules.append(sch)
+
+                if not found_schedules:
+                    print(
+                        f"일정 내용에 '{search_content}'을(를) 포함하는 일정이 없습니다!"
+                    )
+                else:
+                    print_schedules(found_schedules)
 
         # 조정 기능
         elif cmd in reschedule_command_list:
@@ -621,9 +840,6 @@ def main_prompt():
         elif cmd in quit_command_list:
             print("프로그램을 종료합니다.")
             break
-
-        else:
-            print("올바른 명령어를 입력하세요.")
 
 
 if __name__ == "__main__":
