@@ -581,7 +581,7 @@ def main_prompt():
 
         # factor none 값 지정하여 if문에 오류가 안나게 했습니다.
         cmd = parts[0]
-        factor = None
+        factor = parts[1] if len(parts) == 2 else ""
 
         if len(parts) == 2:
             factor = parts[1]
@@ -611,7 +611,7 @@ def main_prompt():
                     "올바른 인자의 형태: <일정번호> 혹은 <일정번호> <공백열1> <일정내용>"
                 )
                 continue
-            change(schedules, factor)
+            schedules = change(schedules, factor)
         elif cmd in quit_command_list:
             print("프로그램을 종료합니다.")
             break
