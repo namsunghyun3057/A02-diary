@@ -604,6 +604,7 @@ def main_prompt():
         """
         factor = parts[1] if len(parts) == 2 else ""
 
+        # 추가 기능
         if cmd in add_command_list:
             if not factor:
                 print("형식: add <기간> <일정내용>")
@@ -629,6 +630,35 @@ def main_prompt():
                 save_schedules(schedules)
             except Exception as e:
                 print(f"오류: {e}")
+
+        # 삭제 기능
+        elif cmd in delete_command_list:
+            if not factor:
+                print("오류: 삭제 명령어의 인자인 일정번호를 다시 확인해 주십시오!")
+                print("올바른 인자의 형태: <삭제> <공백열1> <일정번호>")
+                continue
+
+            if not schedules:
+                print("기록된 일정이 없어 삭제할 수 없습니다!")
+                continue
+            try:
+                delete_index = int(factor)
+
+                if 1 <= delete_index <= len(schedules):
+                    deleted_schedule = schedules.pop(delete_index - 1)
+                    print(
+                        f"일정 [{delete_index}: {deleted_schedule}]이(가) 삭제되었습니다!"
+                    )
+                    save_schedules(schedules)
+                else:
+                    print(
+                        f"오류: 일정 번호가 유효한 범위(1 ~ {len(schedules)})를 벗어났습니다!"
+                    )
+
+            except ValueError:
+                print("오류: 일정 번호는 숫자여야 합니다!")
+            except Exception as e:
+                print(f"오류: 일정을 삭제하는 중 문제가 발생했습니다! ({e})")
 
         # 열람 기능
         elif cmd in view_command_list:
@@ -680,35 +710,6 @@ def main_prompt():
                     )
                 else:
                     print_schedules(found_schedules)
-
-        # 삭제 기능
-        elif cmd in delete_command_list:
-            if not factor:
-                print("오류: 삭제 명령어의 인자인 일정번호를 다시 확인해 주십시오!")
-                print("올바른 인자의 형태: <삭제> <공백열1> <일정번호>")
-                continue
-
-            if not schedules:
-                print("기록된 일정이 없어 삭제할 수 없습니다!")
-                continue
-            try:
-                delete_index = int(factor)
-
-                if 1 <= delete_index <= len(schedules):
-                    deleted_schedule = schedules.pop(delete_index - 1)
-                    print(
-                        f"일정 [{delete_index}: {deleted_schedule}]이(가) 삭제되었습니다!"
-                    )
-                    save_schedules(schedules)
-                else:
-                    print(
-                        f"오류: 일정 번호가 유효한 범위(1 ~ {len(schedules)})를 벗어났습니다!"
-                    )
-
-            except ValueError:
-                print("오류: 일정 번호는 숫자여야 합니다!")
-            except Exception as e:
-                print(f"오류: 일정을 삭제하는 중 문제가 발생했습니다! ({e})")
 
 
 if __name__ == "__main__":
