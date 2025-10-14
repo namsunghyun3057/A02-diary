@@ -635,6 +635,76 @@ def change(schedules, factor):
         return schedules
 
 
+def delete(schedules: list[Schedule], factor: str) -> list[Schedule]:
+    if not schedules:
+        print("기록된 일정이 없어 삭제할 수 없습니다!")
+        return schedules
+    try:
+        delete_index = int(factor)
+
+        if 1 <= delete_index <= len(schedules):
+            deleted_schedule = schedules.pop(delete_index - 1)
+            print(f"일정 [{delete_index}: {deleted_schedule}]이(가) 삭제되었습니다!")
+            save_schedules(schedules)
+        else:
+            print(
+                f"오류: 일정 번호가 유효한 범위(1 ~ {len(schedules)})를 벗어났습니다!"
+            )
+
+    except ValueError:
+        print("오류: 일정 번호는 숫자여야 합니다!")
+    except Exception as e:
+        print(f"오류: 일정을 삭제하는 중 문제가 발생했습니다! ({e})")
+
+    return schedules
+
+
+def view(schedules: list[Schedule], factor: str):
+    if not schedules:
+        print("기록된 일정이 존재하지 않습니다!")
+        return
+    if not factor:
+        print_schedules(schedules)
+    else:
+        try:
+            schedule_time = ScheduleTime(factor)
+            search_period = schedule_time.to_period()
+            found_schedules = []
+            for sch in schedules:
+                if sch.period.overlaps(search_period):
+                    found_schedules.append(sch)
+            if not found_schedules:
+                print(f" '{schedule_time}'에 겹치는 일정이 없습니다!")
+            else:
+                print_schedules(found_schedules)
+
+        except ValueError as e:
+            print(f"오류: 열람 명령어의 인자인 일정시간을 다시 확인해 주십시오!")
+            print("올바른 인자의 형태: <열람> 또는 <열람> <공백열1> <일정시간>")
+            print(f"세부 오류: {e}")
+
+
+def search(schedules: list[Schedule], factor: str):
+    if not schedules:
+        print("기록된 일정이 존재하지 않습니다!")
+        return
+
+    search_content = factor
+
+    if not search_content:
+        print_schedules(schedules)
+    else:
+        found_schedules = []
+        for sch in schedules:
+            if search_content in sch.content.value:
+                found_schedules.append(sch)
+
+        if not found_schedules:
+            print(f"일정 내용에 '{search_content}'을(를) 포함하는 일정이 없습니다!")
+        else:
+            print_schedules(found_schedules)
+
+
 # endregion
 
 
@@ -692,10 +762,12 @@ def main_prompt():
         prompt = strip_whitespace_0(prompt)
 
         if not prompt:  # 명령어 없음
+            print_command_list()
             continue
 
         parts = split_whitespace_1(prompt, 1)
         if len(parts) < 1:  # 명령어 없음
+            print_command_list()
             continue
 
         # factor none 값 지정하여 if문에 오류가 안나게 했습니다.
@@ -717,26 +789,12 @@ def main_prompt():
                 continue
 
             try:
-                new_schedule = Schedule(factor)
+                schedules = add(schedules, factor)
 
-                # 기간 겹침 판단
-                overlap_schedule = None
-                for sch in schedules:
-                    if new_schedule.period.overlaps(sch.period):
-                        overlap_schedule = sch
-                        break
-                if overlap_schedule:
-                    schedules.sort(key=lambda sch: sch.period.start.to_datetime())
-                    overlap_index = schedules.index(overlap_schedule) + 1
-                    print(f"오류: 다음 일정과 기간이 겹칩니다!")
-                    print(f"-> {overlap_index} {overlap_schedule}")
-                    continue
-
-                schedules.append(new_schedule)
-                print("일정이 추가되었습니다!")
-                save_schedules(schedules)
+            except ValueError as e:
+                print(f"오류: 일정 형식에 문제가 있습니다! ({e})")
             except Exception as e:
-                print(f"오류: {e}")
+                print(f"오류: 일정을 추가하는 중 문제가 발생했습니다! ({e})")
 
         # 삭제 기능
         elif cmd in delete_command_list:
@@ -744,79 +802,15 @@ def main_prompt():
                 print("오류: 삭제 명령어의 인자인 일정번호를 다시 확인해 주십시오!")
                 print("올바른 인자의 형태: <삭제> <공백열1> <일정번호>")
                 continue
-
-            if not schedules:
-                print("기록된 일정이 없어 삭제할 수 없습니다!")
-                continue
-            try:
-                delete_index = int(factor)
-
-                if 1 <= delete_index <= len(schedules):
-                    deleted_schedule = schedules.pop(delete_index - 1)
-                    print(
-                        f"일정 [{delete_index}: {deleted_schedule}]이(가) 삭제되었습니다!"
-                    )
-                    save_schedules(schedules)
-                else:
-                    print(
-                        f"오류: 일정 번호가 유효한 범위(1 ~ {len(schedules)})를 벗어났습니다!"
-                    )
-
-            except ValueError:
-                print("오류: 일정 번호는 숫자여야 합니다!")
-            except Exception as e:
-                print(f"오류: 일정을 삭제하는 중 문제가 발생했습니다! ({e})")
+            schedules = delete(schedules, factor)
 
         # 열람 기능
         elif cmd in view_command_list:
-            if not schedules:
-                print("기록된 일정이 존재하지 않습니다!")
-                continue
-
-            if not factor:
-                print_schedules(schedules)
-            else:
-                try:
-                    schedule_time = ScheduleTime(factor)
-                    search_period = schedule_time.to_period()
-                    found_schedules = []
-                    for sch in schedules:
-                        if sch.period.overlaps(search_period):
-                            found_schedules.append(sch)
-                    if not found_schedules:
-                        print(f" '{schedule_time}'에 겹치는 일정이 없습니다!")
-                    else:
-                        print_schedules(found_schedules)
-
-                except ValueError as e:
-                    print(
-                        f"오류: 열람 명령어의 인자인 일정시간을 다시 확인해 주십시오!"
-                    )
-                    print("올바른 인자의 형태: <열람> 또는 <열람> <공백열1> <일정시간>")
-                    print(f"세부 오류: {e}")
+            view(schedules, factor)
 
         # 검색 기능
         elif cmd in search_command_list:
-            if not schedules:
-                print("기록된 일정이 존재하지 않습니다!")
-                continue
-
-            search_content = factor
-
-            if not search_content:
-                print_schedules(schedules)
-            else:
-                found_schedules = []
-                for sch in schedules:
-                    if search_content in sch.content.value:
-                        found_schedules.append(sch)
-
-                if not found_schedules:
-                    print(
-                        f"일정 내용에 '{search_content}'을(를) 포함하는 일정이 없습니다!"
-                    )
-                else:
-                    print_schedules(found_schedules)
+            search(schedules, factor)
 
         # 조정 기능
         elif cmd in reschedule_command_list:
@@ -840,6 +834,10 @@ def main_prompt():
         elif cmd in quit_command_list:
             print("프로그램을 종료합니다.")
             break
+
+        else:
+            print_command_list()
+            continue
 
 
 if __name__ == "__main__":
