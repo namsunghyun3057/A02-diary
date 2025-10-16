@@ -643,9 +643,22 @@ def delete(schedules: list[Schedule], factor: str) -> list[Schedule]:
         delete_index = int(factor)
 
         if 1 <= delete_index <= len(schedules):
-            deleted_schedule = schedules.pop(delete_index - 1)
-            print(f"일정 [{delete_index}: {deleted_schedule}]이(가) 삭제되었습니다!")
-            save_schedules(schedules)
+            schedule_to_delete = schedules[delete_index - 1]
+
+            print(
+                f"[{delete_index} {schedule_to_delete}]을(를) 정말로 삭제하시겠습니까? (Y/N) "
+            )
+            confirm = input(">>> ")
+            confirm = confirm.strip(" \t\f\v").upper()
+
+            if confirm == "Y":
+                schedules.pop(delete_index - 1)
+                print(
+                    f"일정 [{delete_index} {schedule_to_delete}]이(가) 삭제되었습니다."
+                )
+                save_schedules(schedules)
+            else:
+                print("삭제를 취소합니다.")
         else:
             print(
                 f"오류: 일정 번호가 유효한 범위(1 ~ {len(schedules)})를 벗어났습니다!"
