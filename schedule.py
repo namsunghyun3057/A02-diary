@@ -1,6 +1,7 @@
 import os
 import re
 import sys
+import uuid
 from datetime import date
 from datetime import datetime
 from calendar import monthrange
@@ -551,12 +552,16 @@ quit_command_list = ["종료", "ㅈㄹ", "quit", "q", "."]
 
 def add(schedules, factor) -> list[Schedule]:
     new_schedule = Schedule(factor)
+    mention = 1
+    overlap = False
     for idx, sch in enumerate(schedules):
         if new_schedule.period.overlaps(sch.period):
-            print("오류: 다음 일정과 기간이 겹칩니다!")
+            if mention:
+                print("오류: 다음 일정과 기간이 겹칩니다!")
+                mention = 0
             print("-> ", idx + 1, sch)
-            break
-    else:
+            overlap = True
+    if not overlap:
         schedules.append(new_schedule)
         print("일정이 추가되었습니다!")
         save_schedules(schedules)
@@ -578,25 +583,45 @@ def reschedule(schedules, factor) -> list[Schedule]:
         r_sch = r_factors[1]
         schedule = schedules[idx]
         comsch = Schedule(r_sch)
+        overlap = False
 
-        for idx, sch in enumerate(schedules):
+        mention = 1
+        for idx1, sch in enumerate(schedules):
             if comsch.period.overlaps(sch.period):
-                print("오류: 다음 일정과 기간이 겹칩니다!")
-                print("-> ", idx + 1, sch)
-                break
-        else:
+                if idx1 == idx:
+                    continue
+                if mention:
+                    print("오류: 다음 일정과 기간이 겹칩니다!")
+                    mention = 0
+                print("-> ", idx1 + 1, sch)
+                overlap = True
+
+        if not overlap:
             schedule.period = comsch.period
+            schedule.chekck = 1
             save_schedules(schedules)
             print("일정이 다음과 같이 조정되었습니다!")
-            print(
-                "(주의: 일정 순서의 변동으로 인해 해당 일정의 번호가 변경되었습니다!)"
-            )
             schedules = load_schedules()
+
+            if idx < len(schedules):
+                same_order = (
+                    schedules[idx].period.start.to_datetime()
+                    == comsch.period.start.to_datetime()
+                    and schedules[idx].period.end.to_datetime()
+                    == comsch.period.end.to_datetime()
+                )
+            else:
+                same_order = False
+
+            if not same_order:
+                print(
+                    "(주의: 일정 순서의 변동으로 인해 해당 일정의 번호가 변경되었습니다!)"
+                )
             for idx2, sch in enumerate(schedules):
                 if sch.period.start.to_datetime() == comsch.period.start.to_datetime():
                     print(idx2 + 1, sch)
                     break
-        return schedules
+            return schedules
 
     except ValueError:
         try:
@@ -734,7 +759,7 @@ def print_schedules(schedules: list[Schedule]):
         for i, sch in enumerate(schedules, start=1):
             # 일정 출력 형식에 맞게 출력: "일정번호: 일정내용"
             # Schedule.__str__에서 이미 기간을 포함한 형식으로 출력됨
-            print(f"{i}: {sch}")
+            print(f"{i} {sch}")
 
 
 def print_command_list():
@@ -849,8 +874,11 @@ def main_prompt():
 
         # 종료 기능
         elif cmd in quit_command_list:
-            print("프로그램을 종료합니다.")
-            break
+            if not factor:
+                print("프로그램을 종료합니다.")
+                break
+            else:
+                print("오류: 인자가 없어야 합니다!")
 
         else:
             print_command_list()
