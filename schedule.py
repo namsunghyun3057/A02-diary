@@ -722,7 +722,7 @@ def view(schedules: list[Schedule], factor: str):
             ]
 
             if not found_schedules:
-                print(f"'{schedule_time}'에 겹치는 일정이 없습니다!")
+                print("기록된 일정이 존재하지 않습니다!")
             else:
                 print_schedules(found_schedules)
 
