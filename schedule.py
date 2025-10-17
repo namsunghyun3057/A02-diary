@@ -759,15 +759,12 @@ def search(schedules: list[Schedule], factor: str):
 
 
 def print_schedules(schedules: list[Schedule]):
-    """일정 목록을 일정 번호와 함께 출력"""
+    """일정 목록을 일정 번호와 함께 출력 (목업: '번호 일정내용')"""
     if not schedules:
-        print("등록된 일정이 없습니다.")
+        pass
     else:
-        # 출력 전, 일정을 시작 시각 순으로 다시 정렬 (명령어 로직에 따라 순서가 꼬일 수 있으므로)
         schedules.sort(key=lambda sch: sch.period.start.to_datetime())
         for i, sch in enumerate(schedules, start=1):
-            # 일정 출력 형식에 맞게 출력: "일정번호: 일정내용"
-            # Schedule.__str__에서 이미 기간을 포함한 형식으로 출력됨
             print(f"{i} {sch}")
 
 
