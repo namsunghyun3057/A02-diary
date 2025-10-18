@@ -793,8 +793,24 @@ def print_schedules(schedules: list[Schedule]):
         pass
     else:
         schedules.sort(key=lambda sch: sch.period.start.to_datetime())
-        for i, sch in enumerate(schedules, start=1):
-            print(f"{i} {sch}")
+        indexed_list = [(i, sch) for i, sch in enumerate(schedules, start=0)]
+        print_indexed_schedules(indexed_list)
+
+
+def print_indexed_schedules(schedules_with_index: list[tuple[int, Schedule]]):
+    """(인덱스, Schedule 객체) 튜플 리스트를 받아 정렬 후 출력합니다."""
+    schedules_with_index.sort(key=lambda item: item[1].period.start.to_datetime())
+
+    for original_index, sch in schedules_with_index:
+        print(f"{original_index} {sch}")
+
+
+def print_filtered_schedules(schedules_with_index: list[tuple[int, Schedule]]):
+    """(인덱스, Schedule 객체) 튜플 리스트를 받아 정렬하여 출력합니다."""
+    schedules_with_index.sort(key=lambda item: item[1].period.start.to_datetime())
+
+    for original_index, sch in schedules_with_index:
+        print(f"{original_index} {sch}")
 
 
 def print_command_list():
