@@ -593,6 +593,12 @@ def reschedule(schedules, factor) -> list[Schedule]:
         r_sch = r_factors[1]
         schedule = schedules[idx]
         comsch = Schedule(r_sch)
+
+        if comsch.content.value != "":
+            print("오류: 조정 명령어의 인자를 다시 확인해 주십시오!")
+            print("올바른 인자의 형태: <일정번호> <공백열1> <기간>")
+            return schedules
+
         overlap = False
 
         mention = 1
