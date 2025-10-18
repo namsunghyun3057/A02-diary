@@ -171,7 +171,7 @@ class Hour:
         return n
 
     def __str__(self):
-        return f"{self.value:02d}시"
+        return f"{self.value:02d}"
 
 
 class Minute:
@@ -190,7 +190,7 @@ class Minute:
         return n
 
     def __str__(self):
-        return f"{self.value:02d}분"
+        return f"{self.value:02d}"
 
 
 class Time:
