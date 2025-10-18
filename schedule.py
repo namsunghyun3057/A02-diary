@@ -487,7 +487,7 @@ def load_schedules() -> list[Schedule]:
             line = line.rstrip("\n\r")
             if line:
                 try:
-                    parts = line.split("\t")
+                    parts = line.split("\t", 10)
 
                     if len(parts) != 11:
                         raise ValueError(
