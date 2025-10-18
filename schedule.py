@@ -665,7 +665,7 @@ def change(schedules, factor):
             print("오류: 일정번호에 양의 정수 값을 입력하세요!")
             return schedules
         if idx >= len(schedules):
-            print("오류: 입력한 일정번호에 해당하는 일정이 없습니다!")
+            print("오류: 입력한 번호에 해당하는 일정이 없습니다!")
             return schedules
         if len(c_factors) == 2:
             content = c_factors[1]
