@@ -688,11 +688,11 @@ def delete(schedules: list[Schedule], index_str: str) -> list[Schedule]:
 
         if 1 <= delete_index <= len(schedules):
             schedule_to_delete = schedules[delete_index - 1]
+            print(
+                f"[{delete_index} {schedule_to_delete}]을(를) 정말로 삭제하시겠습니까? (Y/N) "
+            )
 
             while True:
-                print(
-                    f"[{delete_index} {schedule_to_delete}]을(를) 정말로 삭제하시겠습니까? (Y/N) "
-                )
 
                 confirm = input(">>> ")
                 confirm = confirm.strip(" \t\f\v").upper()
@@ -708,7 +708,7 @@ def delete(schedules: list[Schedule], index_str: str) -> list[Schedule]:
                     print("삭제를 취소합니다.")
                     break
                 else:
-                    print("오류: Y(y)나 N(n) 중에서 선택하여 입력해 주십시오!")
+                    print("오류: 인자가 잘못되었습니다!")
 
         else:
             print(
