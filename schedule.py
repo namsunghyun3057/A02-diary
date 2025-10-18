@@ -578,7 +578,6 @@ def reschedule(schedules, factor) -> list[Schedule]:
         r_factors = split_whitespace_1(factor, 1)
         check = 1
         idx = int(r_factors[0]) - 1
-        print(idx)
         check = 0
         if idx < 0:
             print("오류: 일정번호에 양의 정수 값을 입력하세요!")
@@ -647,7 +646,7 @@ def reschedule(schedules, factor) -> list[Schedule]:
     except IndexError:
         print("오류: 조정 명령어의 인자를 다시 확인해 주십시오!")
         print("올바른 인자의 형태: <일정번호> <공백열1> <기간>")
-        return schedule
+        return schedules
 
 
 def change(schedules, factor):
@@ -668,6 +667,8 @@ def change(schedules, factor):
             content = ""
         schedules[idx].content = Content(content)
         save_schedules(schedules)
+        print("일정이 다음과 같이 변경되었습니다!")
+        print(idx + 1, schedules[idx])
         return schedules
     except ValueError:
         try:
