@@ -678,30 +678,38 @@ def change(schedules, factor):
         return schedules
 
 
-def delete(schedules: list[Schedule], factor: str) -> list[Schedule]:
+def delete(schedules: list[Schedule], index_str: str) -> list[Schedule]:
     if not schedules:
         print("기록된 일정이 없어 삭제할 수 없습니다!")
         return schedules
+
     try:
-        delete_index = int(factor)
+        delete_index = int(index_str)
 
         if 1 <= delete_index <= len(schedules):
             schedule_to_delete = schedules[delete_index - 1]
 
-            print(
-                f"[{delete_index} {schedule_to_delete}]을(를) 정말로 삭제하시겠습니까? (Y/N) "
-            )
-            confirm = input(">>> ")
-            confirm = confirm.strip(" \t\f\v").upper()
-
-            if confirm == "Y":
-                schedules.pop(delete_index - 1)
+            while True:
                 print(
-                    f"일정 [{delete_index} {schedule_to_delete}]이(가) 삭제되었습니다."
+                    f"[{delete_index} {schedule_to_delete}]을(를) 정말로 삭제하시겠습니까? (Y/N) "
                 )
-                save_schedules(schedules)
-            else:
-                print("삭제를 취소합니다.")
+
+                confirm = input(">>> ")
+                confirm = confirm.strip(" \t\f\v").upper()
+
+                if confirm == "Y":
+                    schedules.pop(delete_index - 1)
+                    print(
+                        f"일정 [{delete_index} {schedule_to_delete}]이(가) 삭제되었습니다!"
+                    )
+                    save_schedules(schedules)
+                    break
+                elif confirm == "N":
+                    print("삭제를 취소합니다.")
+                    break
+                else:
+                    print("오류: Y(y)나 N(n) 중에서 선택하여 입력해 주십시오!")
+
         else:
             print(
                 f"오류: 일정 번호가 유효한 범위(1 ~ {len(schedules)})를 벗어났습니다!"
@@ -719,18 +727,20 @@ def view(schedules: list[Schedule], factor: str):
     if not schedules:
         print("기록된 일정이 존재하지 않습니다!")
         return
+
     if not factor:
         print_schedules(schedules)
     else:
         try:
             schedule_time = ScheduleTime(factor)
             search_period = schedule_time.to_period()
-            found_schedules = []
-            for sch in schedules:
-                if sch.period.overlaps(search_period):
-                    found_schedules.append(sch)
+
+            found_schedules = [
+                sch for sch in schedules if sch.period.overlaps(search_period)
+            ]
+
             if not found_schedules:
-                print(f" '{schedule_time}'에 겹치는 일정이 없습니다!")
+                print("기록된 일정이 존재하지 않습니다!")
             else:
                 print_schedules(found_schedules)
 
@@ -750,10 +760,9 @@ def search(schedules: list[Schedule], factor: str):
     if not search_content:
         print_schedules(schedules)
     else:
-        found_schedules = []
-        for sch in schedules:
-            if search_content in sch.content.value:
-                found_schedules.append(sch)
+        found_schedules = [
+            sch for sch in schedules if search_content in sch.content.value
+        ]
 
         if not found_schedules:
             print(f"일정 내용에 '{search_content}'을(를) 포함하는 일정이 없습니다!")
@@ -768,15 +777,12 @@ def search(schedules: list[Schedule], factor: str):
 
 
 def print_schedules(schedules: list[Schedule]):
-    """일정 목록을 일정 번호와 함께 출력"""
+    """일정 목록을 일정 번호와 함께 출력 (목업: '번호 일정내용')"""
     if not schedules:
-        print("등록된 일정이 없습니다.")
+        pass
     else:
-        # 출력 전, 일정을 시작 시각 순으로 다시 정렬 (명령어 로직에 따라 순서가 꼬일 수 있으므로)
         schedules.sort(key=lambda sch: sch.period.start.to_datetime())
         for i, sch in enumerate(schedules, start=1):
-            # 일정 출력 형식에 맞게 출력: "일정번호: 일정내용"
-            # Schedule.__str__에서 이미 기간을 포함한 형식으로 출력됨
             print(f"{i} {sch}")
 
 
