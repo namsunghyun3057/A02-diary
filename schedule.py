@@ -456,7 +456,7 @@ class ScheduleTime:
 DATA_FILE = "schedule_data.txt"
 
 
-def check_data_file():
+def check_data_file(no_permission):
     """데이터 파일 존재 확인 및 생성"""
     if not os.path.exists(DATA_FILE):
         print("현재 경로에 데이터 파일이 없습니다.")
@@ -469,12 +469,14 @@ def check_data_file():
             print(
                 "오류: 현재 경로에 데이터 파일 생성을 실패했습니다. 프로그램을 종료합니다."
             )
-            sys.exit(1)
+            no_permission = 1
+            return no_permission
 
     if not os.access(DATA_FILE, os.R_OK | os.W_OK):
         print(os.path.abspath(DATA_FILE))
         print("에 대한 입출력 권한이 없습니다. 프로그램을 종료합니다.")
-        sys.exit(1)
+        no_permission = 1
+        return no_permission
 
 
 def load_schedules() -> list[Schedule]:
@@ -826,7 +828,10 @@ def print_command_list():
 
 # region 메인 프롬프트
 def main_prompt():
-    check_data_file()
+    no_permisson = 0
+    no_permisson = check_data_file(no_permisson)
+    if no_permisson:
+        return
 
     while True:
         # 일정이 수정되면 index 값이 변경되어야해서 while문 안으로 load_schedules함수를 넣었습니다.
