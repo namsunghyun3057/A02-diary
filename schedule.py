@@ -710,7 +710,6 @@ def delete(schedules: list[Schedule], index_str: str) -> list[Schedule]:
                     save_schedules(schedules)
                     break
                 elif confirm == "N":
-                    print("삭제를 취소합니다.")
                     break
                 else:
                     print("오류: 인자가 잘못되었습니다!")
