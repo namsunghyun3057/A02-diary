@@ -511,13 +511,18 @@ def load_schedules() -> list[Schedule]:
                     schedules.append(Schedule(schedule))
                 except Exception as e:
                     print(f"[데이터 오류] {e}")
-    schedules.sort(key=lambda sch: sch.period.start.to_datetime())
+
+    sort_schedule(schedules)
+    update_schedule_number(schedules)
+
     return schedules
 
 
 def save_schedules(schedules: list[Schedule]):
     """일정 목록을 파일에 저장"""
-    schedules = sorted(schedules, key=lambda sch: sch.period.start.to_datetime())
+
+    sort_schedule(schedules)
+    update_schedule_number(schedules)
 
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         for sch in schedules:
@@ -575,7 +580,7 @@ def add(schedules, factor) -> list[Schedule]:
     return schedules
 
 
-def reschedule(schedules, factor) -> list[Schedule]:
+def reschedule(schedules: list[Schedule], factor) -> list[Schedule]:
     try:
         r_factors = split_whitespace_1(factor, 1)
         check = 1
@@ -594,6 +599,7 @@ def reschedule(schedules, factor) -> list[Schedule]:
 
         r_sch = r_factors[1]
         schedule = schedules[idx]
+        prev_number = schedule.number
         comsch = Schedule(r_sch)
 
         if comsch.content.value != "":
@@ -618,17 +624,10 @@ def reschedule(schedules, factor) -> list[Schedule]:
             schedule.period = comsch.period
             save_schedules(schedules)
             print("일정이 다음과 같이 조정되었습니다!")
-            schedules = load_schedules()
 
-            if idx < len(schedules):
-                same_order = (
-                    schedules[idx].period.start.to_datetime()
-                    == comsch.period.start.to_datetime()
-                    and schedules[idx].period.end.to_datetime()
-                    == comsch.period.end.to_datetime()
-                )
-            else:
-                same_order = False
+            next_number = schedule.number
+
+            same_order = prev_number == next_number
 
             if not same_order:
                 print(
@@ -790,9 +789,9 @@ def print_schedules(schedules: list[Schedule]):
     if not schedules:
         pass
     else:
-        schedules.sort(key=lambda sch: sch.period.start.to_datetime())
-        for i, sch in enumerate(schedules, start=1):
-            print(f"{i} {sch}")
+        sort_schedule(schedules)
+        for sch in schedules:
+            print(f"{sch.number} {sch}")
 
 
 def print_command_list():
@@ -823,12 +822,14 @@ def print_command_list():
     )
 
 
-def sort_schedule(schedules:list[Schedule]):
+def sort_schedule(schedules: list[Schedule]):
     schedules.sort(key=lambda sch: sch.period.start.to_datetime())
 
-def update_schedule_number(schedules:list[Schedule]):
+
+def update_schedule_number(schedules: list[Schedule]):
     for number, schedule in enumerate(schedules, start=1):
         schedule.number = number
+
 
 # endregion
 
