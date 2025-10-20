@@ -344,6 +344,7 @@ class Schedule:
 
     def __init__(self, s: str):
         self.period, self.content = self._parse(s)
+        self.number = -1
 
     def _parse(self, s: str):
         parts = s.split(" ", 2)
@@ -821,6 +822,13 @@ def print_command_list():
         "--------------------------------------------------------------------------------"
     )
 
+
+def sort_schedule(schedules:list[Schedule]):
+    schedules.sort(key=lambda sch: sch.period.start.to_datetime())
+
+def update_schedule_number(schedules:list[Schedule]):
+    for number, schedule in enumerate(schedules, start=1):
+        schedule.number = number
 
 # endregion
 
