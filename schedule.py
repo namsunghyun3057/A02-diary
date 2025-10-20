@@ -509,7 +509,7 @@ def load_schedules() -> list[Schedule]:
                     schedules.append(Schedule(schedule))
                 except Exception as e:
                     print(f"[데이터 오류] {e}")
-    schedules.sort(key=lambda sch: sch.period.start.to_datetime())
+    # schedules.sort(key=lambda sch: sch.period.start.to_datetime())
     return schedules
 
 
@@ -729,7 +729,7 @@ def view(schedules: list[Schedule], factor: str):
         return
 
     if not factor:
-        print_schedules(schedules)
+        print_schedules(schedules, schedules)
     else:
         try:
             schedule_time = ScheduleTime(factor)
@@ -742,7 +742,7 @@ def view(schedules: list[Schedule], factor: str):
             if not found_schedules:
                 print("기록된 일정이 존재하지 않습니다!")
             else:
-                print_schedules(found_schedules)
+                print_schedules(schedules, found_schedules)
 
         except ValueError as e:
             print(f"오류: 열람 명령어의 인자인 일정시간을 다시 확인해 주십시오!")
@@ -758,7 +758,7 @@ def search(schedules: list[Schedule], factor: str):
     search_content = factor
 
     if not search_content:
-        print_schedules(schedules)
+        print_schedules(schedules, schedules)
     else:
         found_schedules = [
             sch for sch in schedules if search_content in sch.content.value
@@ -767,7 +767,7 @@ def search(schedules: list[Schedule], factor: str):
         if not found_schedules:
             print(f"일정 내용에 '{search_content}'을(를) 포함하는 일정이 없습니다!")
         else:
-            print_schedules(found_schedules)
+            print_schedules(schedules, found_schedules)
 
 
 # endregion
@@ -776,14 +776,15 @@ def search(schedules: list[Schedule], factor: str):
 # region 유틸리티 함수
 
 
-def print_schedules(schedules: list[Schedule]):
+def print_schedules(schedules: list[Schedule], filtered_schedules: list[Schedule]):
     """일정 목록을 일정 번호와 함께 출력 (목업: '번호 일정내용')"""
-    if not schedules:
+    if not filtered_schedules:
         pass
     else:
-        schedules.sort(key=lambda sch: sch.period.start.to_datetime())
-        for i, sch in enumerate(schedules, start=1):
-            print(f"{i} {sch}")
+        filtered_schedules.sort(key=lambda sch: sch.period.start.to_datetime())
+        for sch in filtered_schedules:
+            original_index = schedules.index(sch) + 1
+            print(f"{original_index} {sch}")
 
 
 def print_command_list():
