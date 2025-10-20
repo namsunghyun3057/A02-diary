@@ -743,20 +743,19 @@ def view(schedules: list[Schedule], factor: str):
             schedule_time = ScheduleTime(factor)
             search_period = schedule_time.to_period()
 
-            found_schedules_with_index = []
-            for idx, sch in enumerate(schedules, start=0):
-                if sch.period.overlaps(search_period):
-                    found_schedules_with_index.append((idx, sch))
+            found_schedules = [
+                sch for sch in schedules if sch.period.overlaps(search_period)
+            ]
 
-            if not found_schedules_with_index:
+            if not found_schedules:
                 print("기록된 일정이 존재하지 않습니다!")
             else:
-                print_schedules(found_schedules_with_index)
+                print_schedules(found_schedules)
 
         except ValueError as e:
             print(f"오류: 열람 명령어의 인자인 일정시간을 다시 확인해 주십시오!")
             print("올바른 인자의 형태: <열람> 또는 <열람> <공백열1> <일정시간>")
-            # print(f"세부 오류: {e}")
+            print(f"세부 오류: {e}")
 
 
 def search(schedules: list[Schedule], factor: str):
@@ -769,15 +768,14 @@ def search(schedules: list[Schedule], factor: str):
     if not search_content:
         print_schedules(schedules)
     else:
-        found_schedules_with_index = []
-        for idx, sch in enumerate(schedules, start=0):
-            if search_content in sch.content.value:
-                found_schedules_with_index.append((idx, sch))
+        found_schedules = [
+            sch for sch in schedules if search_content in sch.content.value
+        ]
 
-        if not found_schedules_with_index:
+        if not found_schedules:
             print(f"일정 내용에 '{search_content}'을(를) 포함하는 일정이 없습니다!")
         else:
-            print_schedules(found_schedules_with_index)
+            print_schedules(found_schedules)
 
 
 # endregion
