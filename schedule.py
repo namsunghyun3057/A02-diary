@@ -696,14 +696,11 @@ def delete(schedules: list[Schedule], index_str: str) -> list[Schedule]:
 
         if 1 <= delete_index <= len(schedules):
             schedule_to_delete = schedules[delete_index - 1]
-            print(
-                f"[{delete_index} {schedule_to_delete}]을(를) 정말로 삭제하시겠습니까? (Y/N) "
-            )
+            print(schedule_to_delete)
 
             while True:
-
-                confirm = input(">>> ")
-                confirm = confirm.strip(" \t\f\v").upper()
+                confirm = input("정말 삭제하시겠습니까? (Y/N)>>> ")
+                confirm = confirm.upper()
 
                 if confirm == "Y":
                     schedules.pop(delete_index - 1)
@@ -719,12 +716,14 @@ def delete(schedules: list[Schedule], index_str: str) -> list[Schedule]:
                     print("오류: 인자가 잘못되었습니다!")
 
         else:
-            print(
-                f"오류: 일정 번호가 유효한 범위(1 ~ {len(schedules)})를 벗어났습니다!"
-            )
+            print(f"오류: 입력한 번호에 해당하는 일정이 없습니다!")
 
     except ValueError:
-        print("오류: 일정 번호는 숫자여야 합니다!")
+        if re.search(r"[^a-zA-Z0-9가-힣]", index_str) is not None:
+            print("오류: 인자에 기호가 올 수 없습니다!")
+        else:
+            print("오류: 인자에 문자가 올 수 없습니다!")
+
     except Exception as e:
         print(f"오류: 일정을 삭제하는 중 문제가 발생했습니다! ({e})")
 
