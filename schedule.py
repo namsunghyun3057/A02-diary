@@ -478,14 +478,13 @@ def check_data_file(no_permission):
         return no_permission
 
 
-def load_schedules() -> list[tuple[Schedule, int]]:
+def load_schedules() -> list[Schedule]:
     """파일에서 일정 목록 불러오기"""
     schedules = []
     if not os.path.exists(DATA_FILE):
         return schedules
-
     with open(DATA_FILE, "r", encoding="utf-8") as f:
-        for original_index, line in enumerate(f, start=1):
+        for line in f:
             line = line.rstrip("\n\r")
             if line:
                 try:
@@ -493,10 +492,10 @@ def load_schedules() -> list[tuple[Schedule, int]]:
 
                     if len(parts) != 11:
                         raise ValueError(
-                            f"데이터 파일이 형식에 맞지 않습니다. (line: {line})"
+                            "데이터 파일이 형식에 맞지 않습니다. (line: {line})"
                         )
 
-                    schedule_str = (
+                    schedule = (
                         "/".join(parts[0:3])
                         + " "
                         + ":".join(parts[3:5])
@@ -508,22 +507,22 @@ def load_schedules() -> list[tuple[Schedule, int]]:
                         + parts[10]
                     )
 
-                    schedules.append((Schedule(schedule_str), original_index))
+                    schedules.append(Schedule(schedule))
                 except Exception as e:
                     print(f"[데이터 오류] {e}")
-
+    schedules.sort(key=lambda sch: sch.period.start.to_datetime())
     return schedules
 
 
-def save_schedules(schedules: list[tuple[Schedule, int]]):
+def save_schedules(schedules: list[Schedule]):
     """일정 목록을 파일에 저장"""
-    schedules = sorted(schedules, key=lambda item: item[0].period.start.to_datetime())
+    schedules = sorted(schedules, key=lambda sch: sch.period.start.to_datetime())
 
     with open(DATA_FILE, "w", encoding="utf-8") as f:
-        for sch, _ in schedules:
+        for sch in schedules:
             start = sch.period.start
             end = sch.period.end
-            content = sch.content.value.strip()
+            content = sch.content.value
 
             line = (
                 f"{start.date.year.value}\t{start.date.month.value}\t{start.date.day.value}\t"
@@ -732,7 +731,7 @@ def delete(schedules: list[Schedule], index_str: str) -> list[Schedule]:
     return schedules
 
 
-def view(schedules: list[tuple[Schedule, int]], factor: str):
+def view(schedules: list[Schedule], factor: str):
     if not schedules:
         print("기록된 일정이 존재하지 않습니다!")
         return
@@ -745,9 +744,9 @@ def view(schedules: list[tuple[Schedule, int]], factor: str):
             search_period = schedule_time.to_period()
 
             found_schedules_with_index = []
-            for sch, original_index in schedules:
+            for idx, sch in enumerate(schedules, start=0):
                 if sch.period.overlaps(search_period):
-                    found_schedules_with_index.append((sch, original_index))
+                    found_schedules_with_index.append((idx, sch))
 
             if not found_schedules_with_index:
                 print("기록된 일정이 존재하지 않습니다!")
@@ -760,7 +759,7 @@ def view(schedules: list[tuple[Schedule, int]], factor: str):
             # print(f"세부 오류: {e}")
 
 
-def search(schedules: list[tuple[Schedule, int]], factor: str):
+def search(schedules: list[Schedule], factor: str):
     if not schedules:
         print("기록된 일정이 존재하지 않습니다!")
         return
@@ -771,9 +770,9 @@ def search(schedules: list[tuple[Schedule, int]], factor: str):
         print_schedules(schedules)
     else:
         found_schedules_with_index = []
-        for sch, original_index in schedules:
+        for idx, sch in enumerate(schedules, start=0):
             if search_content in sch.content.value:
-                found_schedules_with_index.append((sch, original_index))
+                found_schedules_with_index.append((idx, sch))
 
         if not found_schedules_with_index:
             print(f"일정 내용에 '{search_content}'을(를) 포함하는 일정이 없습니다!")
@@ -787,14 +786,14 @@ def search(schedules: list[tuple[Schedule, int]], factor: str):
 # region 유틸리티 함수
 
 
-def print_schedules(schedules: list[tuple[Schedule, int]]):
+def print_schedules(schedules: list[Schedule]):
     """일정 목록을 일정 번호와 함께 출력 (목업: '번호 일정내용')"""
     if not schedules:
         pass
     else:
-        schedules.sort(key=lambda item: item[0].period.start.to_datetime())
-        for sch, original_index in schedules:
-            print(f"{original_index} {sch}")
+        schedules.sort(key=lambda sch: sch.period.start.to_datetime())
+        indexed_list = [(i, sch) for i, sch in enumerate(schedules, start=0)]
+        print_indexed_schedules(indexed_list)
 
 
 def print_indexed_schedules(schedules_with_index: list[tuple[int, Schedule]]):
