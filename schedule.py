@@ -38,7 +38,7 @@ def remove_tail_letter(s: str, letter: str) -> str:
 # region 데이터 요소 클래스
 class Year:
     def __init__(self, s: str):
-        self.value = self._parse(strip_whitespace_0(s))
+        self.value = self._parse(s)
 
     def _parse(self, s: str) -> int:
         s = remove_tail_letter(s, "년")
@@ -57,7 +57,7 @@ class Year:
 
 class Month:
     def __init__(self, s: str):
-        self.value = self._parse(strip_whitespace_0(s))
+        self.value = self._parse(s)
 
     def _parse(self, s: str) -> int:
         s = remove_tail_letter(s, "월")
@@ -76,7 +76,7 @@ class Month:
 
 class Day:
     def __init__(self, s: str):
-        self.value = self._parse(strip_whitespace_0(s))
+        self.value = self._parse(s)
 
     def _parse(self, s: str) -> int:
         s = remove_tail_letter(s, "일")
@@ -100,8 +100,7 @@ class Date:
     """
 
     def __init__(self, s: str):
-        s_stripped = strip_whitespace_0(s)
-        self.year, self.month, self.day = self._parse(s_stripped)
+        self.year, self.month, self.day = self._parse(s)
         self._validate_date()
 
     def _parse(self, s: str):
@@ -157,7 +156,7 @@ class Date:
 
 class Hour:
     def __init__(self, s: str):
-        self.value = self._parse(strip_whitespace_0(s))
+        self.value = self._parse(s)
 
     def _parse(self, s: str) -> int:
         s = remove_tail_letter(s, "시")
@@ -176,7 +175,7 @@ class Hour:
 
 class Minute:
     def __init__(self, s: str):
-        self.value = self._parse(strip_whitespace_0(s))
+        self.value = self._parse(s)
 
     def _parse(self, s: str) -> int:
         s = remove_tail_letter(s, "분")
@@ -197,7 +196,7 @@ class Time:
     """시:분"""
 
     def __init__(self, s: str):
-        self.hour, self.minute = self._parse(strip_whitespace_0(s))
+        self.hour, self.minute = self._parse(s)
         self._validate_time()
 
     def _parse(self, s: str):
@@ -258,7 +257,7 @@ class DateTime:
     """<날짜> <시간>"""
 
     def __init__(self, s: str):
-        self.date, self.time = self._parse(strip_whitespace_0(s))
+        self.date, self.time = self._parse(s)
 
     def _parse(self, s: str):
         parts = s.split(" ", 1)
@@ -285,7 +284,7 @@ class Period:
     """<시각>~<시각>"""
 
     def __init__(self, s: str):
-        self.start, self.end = self._parse(strip_whitespace_0(s))
+        self.start, self.end = self._parse(s)
 
     def _parse(self, s):
         start, end = s.split("~", 1)
@@ -344,7 +343,7 @@ class Schedule:
     """
 
     def __init__(self, s: str):
-        self.period, self.content = self._parse(strip_whitespace_0(s))
+        self.period, self.content = self._parse(s)
 
     def _parse(self, s: str):
         parts = s.split(" ", 2)
@@ -381,7 +380,7 @@ class ScheduleTime:
     """
 
     def __init__(self, s: str):
-        self._parse(strip_whitespace_0(s))
+        self._parse(s)
 
     def _parse(self, s: str):
         # <날짜> 그 자체 (년/월/일)
