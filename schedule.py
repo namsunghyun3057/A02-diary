@@ -929,7 +929,6 @@ def main_prompt():
         # 종료 기능
         elif cmd in quit_command_list:
             if not factor:
-                print("프로그램을 종료합니다.")
                 break
             else:
                 print("오류: 인자가 없어야 합니다!")
