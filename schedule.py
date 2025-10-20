@@ -456,45 +456,48 @@ class ScheduleTime:
 DATA_FILE = "schedule_data.txt"
 
 
-def check_data_file():
+def check_data_file(no_permission):
     """데이터 파일 존재 확인 및 생성"""
     if not os.path.exists(DATA_FILE):
-        print("데이터 파일이 없습니다. 새로 생성합니다...")
+        print("현재 경로에 데이터 파일이 없습니다.")
+        print("현재 경로에 빈 데이터 파일을 생성합니다 :")
         try:
             with open(DATA_FILE, "w", encoding="utf-8") as f:
+                print(os.path.abspath(DATA_FILE))
                 pass
         except PermissionError:
             print(
-                "오류: 현 경로에 데이터 파일 생성을 실패했습니다. 프로그램을 종료합니다."
+                "오류: 현재 경로에 데이터 파일 생성을 실패했습니다. 프로그램을 종료합니다."
             )
-            sys.exit(1)
-    else:
-        print("데이터 파일이 확인되었습니다.")
+            no_permission = 1
+            return no_permission
 
     if not os.access(DATA_FILE, os.R_OK | os.W_OK):
-        print(f"{os.path.abspath(DATA_FILE)}")
+        print(os.path.abspath(DATA_FILE))
         print("에 대한 입출력 권한이 없습니다. 프로그램을 종료합니다.")
-        sys.exit(1)
+        no_permission = 1
+        return no_permission
 
 
-def load_schedules() -> list[Schedule]:
+def load_schedules() -> list[tuple[Schedule, int]]:
     """파일에서 일정 목록 불러오기"""
     schedules = []
     if not os.path.exists(DATA_FILE):
         return schedules
+
     with open(DATA_FILE, "r", encoding="utf-8") as f:
-        for line in f:
+        for original_index, line in enumerate(f, start=1):
             line = line.rstrip("\n\r")
             if line:
                 try:
-                    parts = line.split("\t")
+                    parts = line.split("\t", 10)
 
                     if len(parts) != 11:
                         raise ValueError(
-                            "데이터 파일이 형식에 맞지 않습니다. (line: {line})"
+                            f"데이터 파일이 형식에 맞지 않습니다. (line: {line})"
                         )
 
-                    schedule = (
+                    schedule_str = (
                         "/".join(parts[0:3])
                         + " "
                         + ":".join(parts[3:5])
@@ -506,22 +509,22 @@ def load_schedules() -> list[Schedule]:
                         + parts[10]
                     )
 
-                    schedules.append(Schedule(schedule))
+                    schedules.append((Schedule(schedule_str), original_index))
                 except Exception as e:
                     print(f"[데이터 오류] {e}")
     # schedules.sort(key=lambda sch: sch.period.start.to_datetime())
     return schedules
 
 
-def save_schedules(schedules: list[Schedule]):
+def save_schedules(schedules: list[tuple[Schedule, int]]):
     """일정 목록을 파일에 저장"""
-    schedules = sorted(schedules, key=lambda sch: sch.period.start.to_datetime())
+    schedules = sorted(schedules, key=lambda item: item[0].period.start.to_datetime())
 
     with open(DATA_FILE, "w", encoding="utf-8") as f:
-        for sch in schedules:
+        for sch, _ in schedules:
             start = sch.period.start
             end = sch.period.end
-            content = sch.content.value
+            content = sch.content.value.strip()
 
             line = (
                 f"{start.date.year.value}\t{start.date.month.value}\t{start.date.day.value}\t"
@@ -578,7 +581,6 @@ def reschedule(schedules, factor) -> list[Schedule]:
         r_factors = split_whitespace_1(factor, 1)
         check = 1
         idx = int(r_factors[0]) - 1
-        print(idx)
         check = 0
         if idx < 0:
             print("오류: 일정번호에 양의 정수 값을 입력하세요!")
@@ -594,6 +596,12 @@ def reschedule(schedules, factor) -> list[Schedule]:
         r_sch = r_factors[1]
         schedule = schedules[idx]
         comsch = Schedule(r_sch)
+
+        if comsch.content.value != "":
+            print("오류: 조정 명령어의 인자를 다시 확인해 주십시오!")
+            print("올바른 인자의 형태: <일정번호> <공백열1> <기간>")
+            return schedules
+
         overlap = False
 
         mention = 1
@@ -647,7 +655,7 @@ def reschedule(schedules, factor) -> list[Schedule]:
     except IndexError:
         print("오류: 조정 명령어의 인자를 다시 확인해 주십시오!")
         print("올바른 인자의 형태: <일정번호> <공백열1> <기간>")
-        return schedule
+        return schedules
 
 
 def change(schedules, factor):
@@ -660,7 +668,7 @@ def change(schedules, factor):
             print("오류: 일정번호에 양의 정수 값을 입력하세요!")
             return schedules
         if idx >= len(schedules):
-            print("오류: 입력한 일정번호에 해당하는 일정이 없습니다!")
+            print("오류: 입력한 번호에 해당하는 일정이 없습니다!")
             return schedules
         if len(c_factors) == 2:
             content = c_factors[1]
@@ -668,6 +676,8 @@ def change(schedules, factor):
             content = ""
         schedules[idx].content = Content(content)
         save_schedules(schedules)
+        print("일정이 다음과 같이 변경되었습니다!")
+        print(idx + 1, schedules[idx])
         return schedules
     except ValueError:
         try:
@@ -723,7 +733,7 @@ def delete(schedules: list[Schedule], index_str: str) -> list[Schedule]:
     return schedules
 
 
-def view(schedules: list[Schedule], factor: str):
+def view(schedules: list[tuple[Schedule, int]], factor: str):
     if not schedules:
         print("기록된 일정이 존재하지 않습니다!")
         return
@@ -735,11 +745,12 @@ def view(schedules: list[Schedule], factor: str):
             schedule_time = ScheduleTime(factor)
             search_period = schedule_time.to_period()
 
-            found_schedules = [
-                sch for sch in schedules if sch.period.overlaps(search_period)
-            ]
+            found_schedules_with_index = []
+            for sch, original_index in schedules:
+                if sch.period.overlaps(search_period):
+                    found_schedules_with_index.append((sch, original_index))
 
-            if not found_schedules:
+            if not found_schedules_with_index:
                 print("기록된 일정이 존재하지 않습니다!")
             else:
                 print_schedules(schedules, found_schedules)
@@ -747,10 +758,10 @@ def view(schedules: list[Schedule], factor: str):
         except ValueError as e:
             print(f"오류: 열람 명령어의 인자인 일정시간을 다시 확인해 주십시오!")
             print("올바른 인자의 형태: <열람> 또는 <열람> <공백열1> <일정시간>")
-            print(f"세부 오류: {e}")
+            # print(f"세부 오류: {e}")
 
 
-def search(schedules: list[Schedule], factor: str):
+def search(schedules: list[tuple[Schedule, int]], factor: str):
     if not schedules:
         print("기록된 일정이 존재하지 않습니다!")
         return
@@ -760,11 +771,12 @@ def search(schedules: list[Schedule], factor: str):
     if not search_content:
         print_schedules(schedules, schedules)
     else:
-        found_schedules = [
-            sch for sch in schedules if search_content in sch.content.value
-        ]
+        found_schedules_with_index = []
+        for sch, original_index in schedules:
+            if search_content in sch.content.value:
+                found_schedules_with_index.append((sch, original_index))
 
-        if not found_schedules:
+        if not found_schedules_with_index:
             print(f"일정 내용에 '{search_content}'을(를) 포함하는 일정이 없습니다!")
         else:
             print_schedules(schedules, found_schedules)
@@ -820,7 +832,10 @@ def print_command_list():
 
 # region 메인 프롬프트
 def main_prompt():
-    check_data_file()
+    no_permisson = 0
+    no_permisson = check_data_file(no_permisson)
+    if no_permisson:
+        return
 
     while True:
         # 일정이 수정되면 index 값이 변경되어야해서 while문 안으로 load_schedules함수를 넣었습니다.
