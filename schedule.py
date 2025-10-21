@@ -561,7 +561,7 @@ def add(schedules, factor) -> list[Schedule]:
         new_schedule = Schedule(factor)
     except ValueError:
         print("오류: 추가 명령어의 인자인 일정을 다시 확인해 주십시오!")
-        print("올바른 인자의 형태: <추가> <공백열1> <일정>")
+        print("올바른 인자의 형태: <일정>")
         return schedules
 
     mention = 1
@@ -753,7 +753,7 @@ def view(schedules: list[Schedule], factor: str):
 
         except ValueError as e:
             print(f"오류: 열람 명령어의 인자인 일정시간을 다시 확인해 주십시오!")
-            print("올바른 인자의 형태: <열람> 또는 <열람> <공백열1> <일정시간>")
+            print("올바른 인자의 형태: <공백열0> 또는 <일정시간>")
             print(f"세부 오류: {e}")
 
 
