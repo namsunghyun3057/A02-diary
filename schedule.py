@@ -292,7 +292,7 @@ class Period:
         start_dt = DateTime(start)
         end_dt = DateTime(end)
 
-        if start_dt.to_datetime() > end_dt.to_datetime():
+        if start_dt.to_datetime() >= end_dt.to_datetime():
             raise ValueError(
                 "기간 형식이 잘못되었습니다. 기간의 시작 시각은 끝 시각보다 빨라야 합니다. (입력 {s})"
             )
@@ -371,7 +371,7 @@ class Schedule:
         if len(self.content.value) == 0:
             return f"{self.period}"
         else:
-            return f"{self.period} {self.content}"
+            return f"{self.period}\t{self.content}"
 
 
 # class 일정시간 추가해야 합니다
@@ -456,7 +456,7 @@ class ScheduleTime:
 DATA_FILE = "schedule_data.txt"
 
 
-def check_data_file(no_permission):
+def check_data_file() -> bool:
     """데이터 파일 존재 확인 및 생성"""
     if not os.path.exists(DATA_FILE):
         print("현재 경로에 데이터 파일이 없습니다.")
@@ -469,14 +469,16 @@ def check_data_file(no_permission):
             print(
                 "오류: 현재 경로에 데이터 파일 생성을 실패했습니다. 프로그램을 종료합니다."
             )
-            no_permission = 1
-            return no_permission
+
+            return False
 
     if not os.access(DATA_FILE, os.R_OK | os.W_OK):
         print(os.path.abspath(DATA_FILE))
         print("에 대한 입출력 권한이 없습니다. 프로그램을 종료합니다.")
-        no_permission = 1
-        return no_permission
+
+        return False
+
+    return True
 
 
 def load_schedules() -> list[Schedule]:
@@ -556,13 +558,13 @@ quit_command_list = ["종료", "ㅈㄹ", "quit", "q", "."]
 # region 명령어 함수
 
 
-def add(schedules, factor) -> list[Schedule]:
+def add(schedules: list[Schedule], factor: str):
     try:
         new_schedule = Schedule(factor)
     except ValueError:
         print("오류: 추가 명령어의 인자인 일정을 다시 확인해 주십시오!")
         print("올바른 인자의 형태: <일정>")
-        return schedules
+        return
 
     mention = 1
     overlap = False
@@ -577,10 +579,15 @@ def add(schedules, factor) -> list[Schedule]:
         schedules.append(new_schedule)
         print("일정이 추가되었습니다!")
         save_schedules(schedules)
-    return schedules
+    return
 
 
-def reschedule(schedules: list[Schedule], factor) -> list[Schedule]:
+def reschedule(schedules: list[Schedule], factor: str):
+    if not factor:
+        print("오류: 조정 명령어의 인자를 다시 확인해 주십시오!")
+        print("올바른 인자의 형태: <일정번호> <공백열1> <기간>")
+        return
+
     try:
         r_factors = split_whitespace_1(factor, 1)
         check = 1
@@ -588,14 +595,14 @@ def reschedule(schedules: list[Schedule], factor) -> list[Schedule]:
         check = 0
         if idx < 0:
             print("오류: 일정번호에 양의 정수 값을 입력하세요!")
-            return schedules
+            return
         if idx >= len(schedules):
             print("오류: 입력한 일정번호에 해당하는 일정이 없습니다!")
-            return schedules
+            return
         if len(r_factors) < 2:
             print("오류: 조정 명령어의 인자를 다시 확인해 주십시오!")
             print("올바른 인자의 형태: <일정번호> <공백열1> <기간>")
-            return schedules
+            return
 
         r_sch = r_factors[1]
         schedule = schedules[idx]
@@ -605,7 +612,7 @@ def reschedule(schedules: list[Schedule], factor) -> list[Schedule]:
         if comsch.content.value != "":
             print("오류: 조정 명령어의 인자를 다시 확인해 주십시오!")
             print("올바른 인자의 형태: <일정번호> <공백열1> <기간>")
-            return schedules
+            return
 
         overlap = False
 
@@ -637,7 +644,7 @@ def reschedule(schedules: list[Schedule], factor) -> list[Schedule]:
                 if sch.period.start.to_datetime() == comsch.period.start.to_datetime():
                     print(idx2 + 1, sch)
                     break
-            return schedules
+            return
 
     except ValueError:
         try:
@@ -649,14 +656,18 @@ def reschedule(schedules: list[Schedule], factor) -> list[Schedule]:
                 print("올바른 인자의 형태: <일정번호> <공백열1> <기간>")
         except:
             print("오류: 일정번호에 문자가 올 수 없습니다!")
-        return schedules
+        return
     except IndexError:
         print("오류: 조정 명령어의 인자를 다시 확인해 주십시오!")
         print("올바른 인자의 형태: <일정번호> <공백열1> <기간>")
-        return schedules
+        return
 
 
-def change(schedules, factor):
+def change(schedules: list[Schedule], factor: str):
+    if not factor:
+        print("오류: 변경 명령어의 인자를 다시 확인해 주십시오!")
+        print("올바른 인자의 형태: <일정번호> 혹은 <일정번호> <공백열1> <일정내용>")
+        return
     try:
         c_factors = split_whitespace_1(factor, 1)
         idx = int(c_factors[0]) - 1
@@ -664,10 +675,10 @@ def change(schedules, factor):
 
         if idx < 0:
             print("오류: 일정번호에 양의 정수 값을 입력하세요!")
-            return schedules
+            return
         if idx >= len(schedules):
             print("오류: 입력한 번호에 해당하는 일정이 없습니다!")
-            return schedules
+            return
         if len(c_factors) == 2:
             content = c_factors[1]
         if not content:
@@ -676,23 +687,28 @@ def change(schedules, factor):
         save_schedules(schedules)
         print("일정이 다음과 같이 변경되었습니다!")
         print(idx + 1, schedules[idx])
-        return schedules
+        return
     except ValueError:
         try:
             float_val = float(idx)
             print("오류: 일정번호에 양의 정수 값을 입력하세요!")
         except:
             print("오류: 일정번호에 문자가 올 수 없습니다!")
-        return schedules
+        return
 
 
-def delete(schedules: list[Schedule], index_str: str) -> list[Schedule]:
+def delete(schedules: list[Schedule], factor: str):
+    if not factor:
+        print("오류: 삭제 명령어의 인자인 일정번호를 다시 확인해 주십시오!")
+        print("올바른 인자의 형태: <일정번호>")
+        return
+
     if not schedules:
         print("기록된 일정이 없어 삭제할 수 없습니다!")
-        return schedules
+        return
 
     try:
-        delete_index = int(index_str)
+        delete_index = int(factor)
 
         if 1 <= delete_index <= len(schedules):
             schedule_to_delete = schedules[delete_index - 1]
@@ -716,7 +732,7 @@ def delete(schedules: list[Schedule], index_str: str) -> list[Schedule]:
             print(f"오류: 입력한 번호에 해당하는 일정이 없습니다!")
 
     except ValueError:
-        if re.search(r"[^a-zA-Z0-9ㄱ-ㅎㅏ-ㅣ가-힣]", index_str) is not None:
+        if re.search(r"[^a-zA-Z0-9ㄱ-ㅎㅏ-ㅣ가-힣]", factor) is not None:
             print("오류: 인자에 기호가 올 수 없습니다!")
         else:
             print("오류: 인자에 문자가 올 수 없습니다!")
@@ -724,7 +740,7 @@ def delete(schedules: list[Schedule], index_str: str) -> list[Schedule]:
     except Exception as e:
         print(f"오류: 일정을 삭제하는 중 문제가 발생했습니다! ({e})")
 
-    return schedules
+    return
 
 
 def view(schedules: list[Schedule], factor: str):
@@ -744,14 +760,14 @@ def view(schedules: list[Schedule], factor: str):
             ]
 
             if not found_schedules:
-                print("기록된 일정이 존재하지 않습니다!")
+                print("열람된 일정이 존재하지 않습니다!")
             else:
                 print_schedules(found_schedules)
 
         except ValueError as e:
             print(f"오류: 열람 명령어의 인자인 일정시간을 다시 확인해 주십시오!")
-            print("올바른 인자의 형태: <공백열0> 또는 <일정시간>")
-            print(f"세부 오류: {e}")
+            print("올바른 인자의 형태: 없거나 <일정시간>")
+            # print(f"세부 오류: {e}")
 
 
 def search(schedules: list[Schedule], factor: str):
@@ -769,7 +785,7 @@ def search(schedules: list[Schedule], factor: str):
         ]
 
         if not found_schedules:
-            print(f"일정 내용에 '{search_content}'을(를) 포함하는 일정이 없습니다!")
+            print(f"검색된 일정이 존재하지 않습니다!")
         else:
             print_schedules(found_schedules)
 
@@ -832,9 +848,8 @@ def update_schedule_number(schedules: list[Schedule]):
 
 # region 메인 프롬프트
 def main_prompt():
-    no_permisson = 0
-    no_permisson = check_data_file(no_permisson)
-    if no_permisson:
+    is_valid = check_data_file()
+    if not is_valid:
         return
 
     while True:
@@ -865,26 +880,11 @@ def main_prompt():
 
         # 추가 기능
         if cmd in add_command_list:
-            if not factor:
-                print("오류: 추가 명령어의 인자인 일정을 다시 확인해 주십시오!")
-                print("올바른 인자의 형태: <기간> <공백열1> <일정내용>")
-                continue
-
-            try:
-                schedules = add(schedules, factor)
-
-            except ValueError as e:
-                print(f"오류: 일정 형식에 문제가 있습니다! ({e})")
-            except Exception as e:
-                print(f"오류: 일정을 추가하는 중 문제가 발생했습니다! ({e})")
+            add(schedules, factor)
 
         # 삭제 기능
         elif cmd in delete_command_list:
-            if not factor:
-                print("오류: 삭제 명령어의 인자인 일정번호를 다시 확인해 주십시오!")
-                print("올바른 인자의 형태: <삭제> <공백열1> <일정번호>")
-                continue
-            schedules = delete(schedules, factor)
+            delete(schedules, factor)
 
         # 열람 기능
         elif cmd in view_command_list:
@@ -896,21 +896,11 @@ def main_prompt():
 
         # 조정 기능
         elif cmd in reschedule_command_list:
-            if not factor:
-                print("오류: 조정 명령어의 인자를 다시 확인해 주십시오!")
-                print("올바른 인자의 형태: <일정번호> <공백열1> <기간>")
-                continue
-            schedules = reschedule(schedules, factor)
+            reschedule(schedules, factor)
 
         # 변경 기능
         elif cmd in change_command_list:
-            if not factor:
-                print("오류: 변경 명령어의 인자를 다시 확인해 주십시오!")
-                print(
-                    "올바른 인자의 형태: <일정번호> 혹은 <일정번호> <공백열1> <일정내용>"
-                )
-                continue
-            schedules = change(schedules, factor)
+            change(schedules, factor)
 
         # 종료 기능
         elif cmd in quit_command_list:
