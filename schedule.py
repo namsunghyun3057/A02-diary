@@ -584,7 +584,7 @@ def add(schedules: list[Schedule], factor: str):
 
 def reschedule(schedules: list[Schedule], factor: str):
     if not factor:
-        print("오류: 조정 명령어의 인자를 다시 확인해 주십시오!")
+        print("오류: 조정 명령어의 인자인 기간을 다시 확인해 주십시오!")
         print("올바른 인자의 형태: <일정번호> <공백열1> <기간>")
         return
 
@@ -600,7 +600,7 @@ def reschedule(schedules: list[Schedule], factor: str):
             print("오류: 입력한 일정번호에 해당하는 일정이 없습니다!")
             return
         if len(r_factors) < 2:
-            print("오류: 조정 명령어의 인자를 다시 확인해 주십시오!")
+            print("오류: 조정 명령어의 인자인 기간을 다시 확인해 주십시오!")
             print("올바른 인자의 형태: <일정번호> <공백열1> <기간>")
             return
 
@@ -610,7 +610,7 @@ def reschedule(schedules: list[Schedule], factor: str):
         comsch = Schedule(r_sch)
 
         if comsch.content.value != "":
-            print("오류: 조정 명령어의 인자를 다시 확인해 주십시오!")
+            print("오류: 조정 명령어의 인자인 기간을 다시 확인해 주십시오!")
             print("올바른 인자의 형태: <일정번호> <공백열1> <기간>")
             return
 
@@ -652,13 +652,13 @@ def reschedule(schedules: list[Schedule], factor: str):
                 float_val = float(r_factors[0])
                 print("오류: 일정번호에 양의 정수 값을 입력하세요!")
             else:
-                print("오류: 조정 명령어의 인자를 다시 확인해 주십시오!")
+                print("오류: 조정 명령어의 인자인 기간을 다시 확인해 주십시오!")
                 print("올바른 인자의 형태: <일정번호> <공백열1> <기간>")
         except:
             print("오류: 일정번호에 문자가 올 수 없습니다!")
         return
     except IndexError:
-        print("오류: 조정 명령어의 인자를 다시 확인해 주십시오!")
+        print("오류: 조정 명령어의 인자인 기간을 다시 확인해 주십시오!")
         print("올바른 인자의 형태: <일정번호> <공백열1> <기간>")
         return
 
