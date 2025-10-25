@@ -649,6 +649,10 @@ def reschedule(schedules: list[Schedule], factor: str):
     except ValueError:
         try:
             if check:
+                if len(r_factors) != 2:
+                    print("오류: 조정 명령어의 인자를 다시 확인해 주십시오!")
+                    print("올바른 인자의 형태: <일정번호> <공백열1> <기간>")
+                    return
                 Schedule(r_factors[1])
                 l = split_whitespace_1(r_factors[1], 3)
                 if len(l) != 3:
