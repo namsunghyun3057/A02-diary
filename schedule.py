@@ -719,28 +719,31 @@ def delete(schedules: list[Schedule], factor: str):
         return
 
     try:
-        delete_index = int(factor)
+        idx = int(factor) - 1
 
-        if 1 <= delete_index <= len(schedules):
-            schedule_to_delete = schedules[delete_index - 1]
-            print(f"{schedule_to_delete.number} {schedule_to_delete}")
+        if idx < 0:
+            print("오류: 일정번호에 양의 정수 값을 입력하세요!")
+            return
+        if idx >= len(schedules):
+            print("오류: 입력한 번호에 해당하는 일정이 없습니다!")
+            return
 
-            while True:
-                confirm = input("정말 삭제하시겠습니까? (Y/N)>>> ")
-                confirm = confirm.upper()
+        schedule_to_delete = schedules[idx]
+        print(f"{schedule_to_delete.number} {schedule_to_delete}")
 
-                if confirm == "Y":
-                    schedules.pop(delete_index - 1)
-                    print("일정이 삭제되었습니다!")
-                    save_schedules(schedules)
-                    break
-                elif confirm == "N":
-                    break
-                else:
-                    print("오류: 인자가 잘못되었습니다!")
+        while True:
+            confirm = input("정말 삭제하시겠습니까? (Y/N)>>> ")
+            confirm = confirm.upper()
 
-        else:
-            print(f"오류: 입력한 번호에 해당하는 일정이 없습니다!")
+            if confirm == "Y":
+                schedules.pop(idx)
+                print("일정이 삭제되었습니다!")
+                save_schedules(schedules)
+                break
+            elif confirm == "N":
+                break
+            else:
+                print("오류: 인자가 잘못되었습니다!")
 
     except ValueError:
         if re.search(r"[^a-zA-Z0-9ㄱ-ㅎㅏ-ㅣ가-힣]", factor) is not None:
