@@ -460,9 +460,9 @@ def check_data_file() -> bool:
     """데이터 파일 존재 확인 및 생성"""
     if not os.path.exists(DATA_FILE):
         print("현재 경로에 데이터 파일이 없습니다.")
-        print("현재 경로에 빈 데이터 파일을 생성합니다 :")
         try:
             with open(DATA_FILE, "w", encoding="utf-8") as f:
+                print("현재 경로에 빈 데이터 파일을 생성합니다 :")
                 print(os.path.abspath(DATA_FILE))
                 pass
         except PermissionError:
