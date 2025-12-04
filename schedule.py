@@ -666,12 +666,10 @@ def load_schedules() -> list[Schedule]:
             if line:
                 try:
                     parts = line.split("\t", 15)
-
                     if len(parts) != 16:
                         raise ValueError(
                             "데이터 파일이 형식에 맞지 않습니다. (line: {line})"
                         )
-
                     schedule = (
                         "/".join(parts[5:8])
                         + " "
@@ -681,9 +679,8 @@ def load_schedules() -> list[Schedule]:
                         + " "
                         + ":".join(parts[13:15])
                         + " "
-                        + parts[16]
+                        + parts[15]
                     )
-
                     sch = Schedule(schedule)
                     sch.allow_overlap = parts[0]
                     sch.schedule_id = parts[1]
@@ -696,7 +693,6 @@ def load_schedules() -> list[Schedule]:
                     id_num = max(id_num, int(parts[1]))
                 except Exception as e:
                     print(f"[데이터 오류] {e}")
-
     sort_schedule(schedules)
     update_schedule_number(schedules)
 
@@ -1042,7 +1038,13 @@ def print_command_list():
 
 
 def sort_schedule(schedules: list[Schedule]):
-    schedules.sort(key=lambda sch: sch.period.start.to_datetime())
+    schedules.sort(
+        key=lambda sch: (
+            sch.period.start.to_datetime(),
+            sch.period.end.to_datetime(),
+            sch.schedule_id,
+        )
+    )
 
 
 def update_schedule_number(schedules: list[Schedule]):
@@ -1062,7 +1064,7 @@ def main_prompt():
     while True:
         # 일정이 수정되면 index 값이 변경되어야해서 while문 안으로 load_schedules함수를 넣었습니다.
         schedules = load_schedules()
-
+        print_schedules(schedules)
         # region 반복자 테스트
 
         target = schedules[0]
