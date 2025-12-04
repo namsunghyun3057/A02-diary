@@ -1,6 +1,7 @@
 import os
 import re
 import sys
+import copy
 from datetime import date
 from datetime import datetime
 from calendar import monthrange
@@ -345,6 +346,11 @@ class Schedule:
     def __init__(self, s: str):
         self.period, self.content = self._parse(s)
         self.number = -1
+        self.schedule_id = 0
+        self.repeat_id = 0
+        self.allow_overlap = False
+        self.repeat_type = None
+        self.repeat_count = 0
 
     def _parse(self, s: str):
         parts = s.split(" ", 2)
@@ -366,6 +372,17 @@ class Schedule:
             content = ""
 
         return Period(period), Content(content)
+
+    def is_conflict(self, other: "Schedule") -> bool:
+        """
+        일정이 다른 일정과 충돌하는지 확인하는 함수
+        """
+        # 둘 중 하나라도 allow_overlap이 True일 경우 False 반환
+        if self.allow_overlap or other.allow_overlap:
+            return False
+
+        # self의 기간과 other의 기간이 겹치는지 반환
+        return self.period.overlaps(other.period)
 
     def __str__(self):
         if len(self.content.value) == 0:
@@ -447,6 +464,159 @@ class ScheduleTime:
             raise ValueError("유효하지 않은 일정시간 모드입니다.")
 
         return Period(f"{start_dt_str}~{end_dt_str}")
+
+
+class Repeater:
+    """
+    <반복유형><공백열1><반복횟수>
+    """
+
+    def __init__(self, base_schedule: Schedule, s: str):
+        self.base_schedule = base_schedule
+        self.repeat_type, self.repeat_count = self._parse(s)
+
+    def _parse(self, s: str):
+        parts = split_whitespace_1(s, 1)
+
+        if len(parts) != 2:
+            raise ValueError(f"Repeater: s({s}) is not splited to 2 parts")
+
+        repeat_type = parts[0]
+        repeat_count = parts[1]
+
+        if (
+            repeat_type != "M"
+            and repeat_type != "m"
+            and repeat_type != "Y"
+            and repeat_type != "y"
+        ):
+            raise ValueError(f"repeat_type({repeat_type}) is not M, m, Y, y")
+
+        try:
+            repeat_count = int(repeat_count)
+        except ValueError:
+            raise ValueError(f"repeat_count({repeat_count}) is not Integer")
+
+        if not (repeat_count >= 1 and repeat_count <= 999999):
+            raise ValueError(f"repeat_count({repeat_count}) is not between 1~999,999")
+
+        return repeat_type, repeat_count
+
+    def can_repeat(self) -> bool:
+        """
+        반복자가 주어진 기준 일정의 기간과 반복 유형에서 반복이 가능한지 반환합니다
+        """
+        base_period = self.base_schedule.period
+
+        base_start = base_period.start
+        base_end = base_period.end
+
+        tmp_year = base_start.date.year.value
+        tmp_month = base_start.date.month.value
+        tmp_day = base_start.date.day.value
+        tmp_hour = base_start.time.hour.value
+        tmp_minute = base_start.time.minute.value
+
+        end_year = base_end.date.year.value
+        end_month = base_end.date.month.value
+        end_day = base_end.date.day.value
+        end_hour = base_end.time.hour.value
+        end_minute = base_end.time.minute.value
+
+        count = 0
+
+        if self.repeat_type == "M" or self.repeat_type == "m":
+            count = 1
+        elif self.repeat_type == "Y" or self.repeat_type == "y":
+            count = 12
+
+        tmp_year, tmp_month, tmp_day = self._get_next_date(
+            tmp_year, tmp_month, tmp_day, count
+        )
+
+        if tmp_year != end_year:
+            return tmp_year > end_year
+        elif tmp_month != end_month:
+            return tmp_month > end_month
+        elif tmp_day != end_day:
+            return tmp_day > end_day
+        elif tmp_hour != end_hour:
+            return tmp_hour > end_hour
+        elif tmp_minute != end_minute:
+            return tmp_minute > end_minute
+        else:
+            return False
+
+    def get_repeat_schedules(self) -> list[Schedule]:
+        """
+        반복자의 기준 일정과 반복 유형, 반복 횟수에 따라 반복된 새로운 일정들을 반환합니다.
+        """
+        if not self.can_repeat():
+            return None
+
+        result_list = []
+
+        base_period = self.base_schedule.period
+        base_start = base_period.start
+        base_end = base_period.end
+
+        sy = base_start.date.year.value
+        sm = base_start.date.month.value
+        sd = base_start.date.day.value
+
+        ey = base_end.date.year.value
+        em = base_end.date.month.value
+        ed = base_end.date.day.value
+
+        count = 0
+
+        if self.repeat_type == "M" or self.repeat_type == "m":
+            count = 1
+        elif self.repeat_type == "Y" or self.repeat_type == "y":
+            count = 12
+
+        for _ in range(self.repeat_count):
+            sy, sm, sd = self._get_next_date(sy, sm, sd, count)
+            ey, em, ed = self._get_next_date(ey, em, ed, count)
+
+            if ey > 9999:
+                break
+
+            try:
+                datetime(sy, sm, sd)
+                datetime(ey, em, ed)
+            except:
+                # 현행 그레고리력에 포함되지 않음
+                continue
+
+            new_schedule = copy.deepcopy(self.base_schedule)
+
+            new_schedule.period.start.date.year.value = sy
+            new_schedule.period.start.date.month.value = sm
+            new_schedule.period.start.date.day.value = sd
+
+            new_schedule.period.end.date.year.value = ey
+            new_schedule.period.end.date.month.value = em
+            new_schedule.period.end.date.day.value = ed
+
+            new_schedule.allow_overlap = self.base_schedule.allow_overlap
+            new_schedule.repeat_id = self.base_schedule.schedule_id
+
+            result_list.append(new_schedule)
+
+        return result_list
+
+    def _get_next_date(self, year: int, month: int, day: int, count: int):
+        if type(count) is not int or count <= 0:
+            raise ValueError(f"count({count}) is not positive integer")
+
+        month += count
+
+        while month > 12:
+            month -= 12
+            year += 1
+
+        return year, month, day
 
 
 # endregion
@@ -869,6 +1039,31 @@ def main_prompt():
     while True:
         # 일정이 수정되면 index 값이 변경되어야해서 while문 안으로 load_schedules함수를 넣었습니다.
         schedules = load_schedules()
+
+        # region 반복자 테스트
+
+        target = schedules[0]
+        print("target")
+        print(target)
+
+        target.allow_overlap = False
+        target.schedule_id = 15
+
+        repeater = Repeater(target, "m 100")
+
+        print("can repeat")
+        print(repeater.can_repeat())
+
+        print("get repeat schedules:")
+        tmp = repeater.get_repeat_schedules()
+
+        for tmp_schedule in tmp:
+            print(
+                f"{tmp_schedule}, {tmp_schedule.allow_overlap}, {tmp_schedule.repeat_id}"
+            )
+
+        # endregion
+
         prompt = input(">>> ")
         prompt = strip_whitespace_0(prompt)
 
