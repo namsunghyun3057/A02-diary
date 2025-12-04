@@ -6,6 +6,9 @@ from datetime import date
 from datetime import datetime
 from calendar import monthrange
 
+# region 전역 변수
+id_num = 0
+
 
 # region 문자열 처리 함수
 def strip_whitespace_0(s: str) -> str:
@@ -654,6 +657,7 @@ def check_data_file() -> bool:
 def load_schedules() -> list[Schedule]:
     """파일에서 일정 목록 불러오기"""
     schedules = []
+    global id_num
     if not os.path.exists(DATA_FILE):
         return schedules
     with open(DATA_FILE, "r", encoding="utf-8") as f:
@@ -661,26 +665,35 @@ def load_schedules() -> list[Schedule]:
             line = line.rstrip("\n\r")
             if line:
                 try:
-                    parts = line.split("\t", 10)
+                    parts = line.split("\t", 15)
 
-                    if len(parts) != 11:
+                    if len(parts) != 16:
                         raise ValueError(
                             "데이터 파일이 형식에 맞지 않습니다. (line: {line})"
                         )
 
                     schedule = (
-                        "/".join(parts[0:3])
-                        + " "
-                        + ":".join(parts[3:5])
-                        + "~"
-                        + "/".join(parts[5:8])
+                        "/".join(parts[5:8])
                         + " "
                         + ":".join(parts[8:10])
+                        + "~"
+                        + "/".join(parts[10:13])
                         + " "
-                        + parts[10]
+                        + ":".join(parts[13:15])
+                        + " "
+                        + parts[16]
                     )
 
-                    schedules.append(Schedule(schedule))
+                    sch = Schedule(schedule)
+                    sch.allow_overlap = parts[0]
+                    sch.schedule_id = parts[1]
+                    sch.repeat_id = parts[2]
+                    if parts[3] != "-":
+                        sch.repeat_type = parts[3]
+                    sch.repeat_count = parts[4]
+                    schedules.append(sch)
+
+                    id_num = max(id_num, int(parts[1]))
                 except Exception as e:
                     print(f"[데이터 오류] {e}")
 
@@ -698,11 +711,20 @@ def save_schedules(schedules: list[Schedule]):
 
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         for sch in schedules:
+            if sch.allow_overlap == "y":
+                sch.allow_overlap = "Y"
+            if sch.allow_overlap == "n":
+                sch.allow_overlap = "N"
+            if sch.repeat_type == "m":
+                sch.repeat_type = "M"
+            if sch.repeat_type == "y":
+                sch.repeat_type = "Y"
             start = sch.period.start
             end = sch.period.end
             content = sch.content.value
 
             line = (
+                f"{sch.allow_overlap}\t{sch.schedule_id}\t{sch.repeat_id}\t{sch.repeat_type}\t{sch.repeat_count}\t"
                 f"{start.date.year.value}\t{start.date.month.value}\t{start.date.day.value}\t"
                 f"{start.time.hour.value}\t{start.time.minute.value}\t"
                 f"{end.date.year.value}\t{end.date.month.value}\t{end.date.day.value}\t"
@@ -723,6 +745,7 @@ reschedule_command_list = ["조정", "ㅈㅈ", "reschedule", "r", "!"]
 change_command_list = ["변경", "ㅂㄱ", "change", "c", "@"]
 add_command_list = ["추가", "ㅊㄱ", "add", "a", "+"]
 quit_command_list = ["종료", "ㅈㄹ", "quit", "q", "."]
+period_command_list = ["반복", "ㅂㅂ", "period", "p", "&"]
 # endregion
 
 # region 명령어 함수
@@ -987,7 +1010,7 @@ def print_schedules(schedules: list[Schedule]):
     else:
         sort_schedule(schedules)
         for sch in schedules:
-            print(f"{sch.number} {sch}")
+            print(f"{sch.number} {sch.allow_overlap} {sch}")
 
 
 def print_command_list():
