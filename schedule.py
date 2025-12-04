@@ -916,17 +916,51 @@ def delete(schedules: list[Schedule], factor: str):
         if idx >= len(schedules):
             print("오류: 입력한 번호에 해당하는 일정이 없습니다!")
             return
+        
 
-        schedule_to_delete = schedules[idx]
-        print(f"{schedule_to_delete.number} {schedule_to_delete}")
+        target = schedules[idx]
+
+        is_repeat_schedule = target.repeat_id > 0 # [분기 1] 반복 일정 확인
+        if is_repeat_schedule: 
+            is_base_schedule = target.schedule_id == target.repeat_id # [분기 2] 기준 일정 확인
+            if not is_base_schedule: 
+                print("오류: 기준 일정의 일정번호로 다시 시도해 주십시오!")
+
+                base_sch = None
+                for sch in schedules:
+                    if sch.schedule_id == target.repeat_id:
+                        base_sch = sch
+                        break
+                
+                if base_sch:
+                    print(f"기준 일정: {base_sch.number} {base_sch}")
+                else:
+                    print("(기준 일정을 찾을 수 없습니다.)")
+                return
+
+        # [서브 프롬프트]
+        print(f"{target.number} {target}")
 
         while True:
             confirm = input("정말 삭제하시겠습니까? (Y/N)>>> ")
             confirm = confirm.upper()
 
             if confirm == "Y":
-                schedules.pop(idx)
-                print("일정이 삭제되었습니다!")
+                if is_repeat_schedule: 
+                    target_repeat_id = target.repeat_id
+                    deleted_count = 0
+                    
+                    for i in range(len(schedules) - 1, -1, -1):
+                        if schedules[i].repeat_id == target_repeat_id:
+                            schedules.pop(i)
+                            deleted_count += 1
+                            
+                    print(f"반복 일정 그룹 {deleted_count}건이 모두 삭제되었습니다!")
+                    
+                else: 
+                    schedules.pop(idx)
+                    print(f"일정 [{target.number} {target}]이(가) 삭제되었습니다!")
+                
                 save_schedules(schedules)
                 break
             elif confirm == "N":
@@ -1066,7 +1100,7 @@ def main_prompt():
         schedules = load_schedules()
         print_schedules(schedules)
         # region 반복자 테스트
-
+        '''
         target = schedules[0]
         print("target")
         print(target)
@@ -1086,7 +1120,7 @@ def main_prompt():
             print(
                 f"{tmp_schedule}, {tmp_schedule.allow_overlap}, {tmp_schedule.repeat_id}"
             )
-
+        '''
         # endregion
 
         prompt = input(">>> ")
