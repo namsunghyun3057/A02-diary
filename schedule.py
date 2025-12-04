@@ -715,12 +715,16 @@ def save_schedules(schedules: list[Schedule]):
                 sch.repeat_type = "M"
             if sch.repeat_type == "y":
                 sch.repeat_type = "Y"
+            if sch.repeat_type == None:
+                t = "-"
+            else:
+                t = sch.repeat_type
             start = sch.period.start
             end = sch.period.end
             content = sch.content.value
 
             line = (
-                f"{sch.allow_overlap}\t{sch.schedule_id}\t{sch.repeat_id}\t{sch.repeat_type}\t{sch.repeat_count}\t"
+                f"{sch.allow_overlap}\t{sch.schedule_id}\t{sch.repeat_id}\t{t}\t{sch.repeat_count}\t"
                 f"{start.date.year.value}\t{start.date.month.value}\t{start.date.day.value}\t"
                 f"{start.time.hour.value}\t{start.time.minute.value}\t"
                 f"{end.date.year.value}\t{end.date.month.value}\t{end.date.day.value}\t"
@@ -882,15 +886,13 @@ def change(schedules: list[Schedule], factor: str):
         if len(c_factors) == 2:
             new_content = c_factors[1]
         if not new_content:
-            content = ""
-        print(new_content)
+            new_content = ""
         target = schedules[target_idx]
-        print(target.repeat_id)
         if target.repeat_id == 0:
             target.content = Content(new_content)
             save_schedules(schedules)
             print("일정이 다음과 같이 변경되었습니다!")
-            print(target_idx + 1, target)
+            print(target_idx + 1, target.allow_overlap, target)
             return
         elif target.repeat_id == target.schedule_id:
             target.content = Content(new_content)
@@ -898,12 +900,12 @@ def change(schedules: list[Schedule], factor: str):
             for idx, sch in enumerate(schedules):
                 if sch.repeat_id == target.repeat_id:
                     sch.content = Content(new_content)
-                    print(idx + 1, sch)
+                    print(idx + 1, sch.allow_overlap, sch)
         else:
             print("오류: 기준 일정의 일정번호로 다시 시도해 주십시오!")
             for sch in schedules:
                 if sch.schedule_id == target.repeat_id:
-                    print("-> ", sch.number, sch)
+                    print("-> ", sch.number, sch.allow_overlap, sch)
 
     except ValueError:
         try:
