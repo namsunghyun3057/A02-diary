@@ -683,11 +683,11 @@ def load_schedules() -> list[Schedule]:
                     )
                     sch = Schedule(schedule)
                     sch.allow_overlap = parts[0]
-                    sch.schedule_id = parts[1]
-                    sch.repeat_id = parts[2]
+                    sch.schedule_id = int(parts[1])
+                    sch.repeat_id = int(parts[2])
                     if parts[3] != "-":
                         sch.repeat_type = parts[3]
-                    sch.repeat_count = parts[4]
+                    sch.repeat_count = int(parts[4])
                     schedules.append(sch)
 
                     id_num = max(id_num, int(parts[1]))
@@ -870,24 +870,41 @@ def change(schedules: list[Schedule], factor: str):
         return
     try:
         c_factors = split_whitespace_1(factor, 1)
-        idx = int(c_factors[0]) - 1
-        content = None
+        target_idx = int(c_factors[0]) - 1
+        new_content = None
 
-        if idx < 0:
+        if target_idx < 0:
             print("오류: 일정번호에 양의 정수 값을 입력하세요!")
             return
-        if idx >= len(schedules):
+        if target_idx >= len(schedules):
             print("오류: 입력한 번호에 해당하는 일정이 없습니다!")
             return
         if len(c_factors) == 2:
-            content = c_factors[1]
-        if not content:
+            new_content = c_factors[1]
+        if not new_content:
             content = ""
-        schedules[idx].content = Content(content)
-        save_schedules(schedules)
-        print("일정이 다음과 같이 변경되었습니다!")
-        print(idx + 1, schedules[idx])
-        return
+        print(new_content)
+        target = schedules[target_idx]
+        print(target.repeat_id)
+        if target.repeat_id == 0:
+            target.content = Content(new_content)
+            save_schedules(schedules)
+            print("일정이 다음과 같이 변경되었습니다!")
+            print(target_idx + 1, target)
+            return
+        elif target.repeat_id == target.schedule_id:
+            target.content = Content(new_content)
+            print("일정이 다음과 같이 변경되었습니다!")
+            for idx, sch in enumerate(schedules):
+                if sch.repeat_id == target.repeat_id:
+                    sch.content = Content(new_content)
+                    print(idx + 1, sch)
+        else:
+            print("오류: 기준 일정의 일정번호로 다시 시도해 주십시오!")
+            for sch in schedules:
+                if sch.schedule_id == target.repeat_id:
+                    print("-> ", sch.number, sch)
+
     except ValueError:
         try:
             float_val = float(idx)
@@ -1064,28 +1081,28 @@ def main_prompt():
     while True:
         # 일정이 수정되면 index 값이 변경되어야해서 while문 안으로 load_schedules함수를 넣었습니다.
         schedules = load_schedules()
-        print_schedules(schedules)
-        # region 반복자 테스트
+        # print_schedules(schedules)
+        # # region 반복자 테스트
 
-        target = schedules[0]
-        print("target")
-        print(target)
+        # target = schedules[0]
+        # print("target")
+        # print(target)
 
-        target.allow_overlap = False
-        target.schedule_id = 15
+        # target.allow_overlap = False
+        # target.schedule_id = 15
 
-        repeater = Repeater(target, "m 100")
+        # repeater = Repeater(target, "m 100")
 
-        print("can repeat")
-        print(repeater.can_repeat())
+        # print("can repeat")
+        # print(repeater.can_repeat())
 
-        print("get repeat schedules:")
-        tmp = repeater.get_repeat_schedules()
+        # print("get repeat schedules:")
+        # tmp = repeater.get_repeat_schedules()
 
-        for tmp_schedule in tmp:
-            print(
-                f"{tmp_schedule}, {tmp_schedule.allow_overlap}, {tmp_schedule.repeat_id}"
-            )
+        # for tmp_schedule in tmp:
+        #     print(
+        #         f"{tmp_schedule}, {tmp_schedule.allow_overlap}, {tmp_schedule.repeat_id}"
+        #     )
 
         # endregion
 
