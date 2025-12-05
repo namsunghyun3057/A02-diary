@@ -759,8 +759,8 @@ def add(schedules: list[Schedule], factor: str):
         print("올바른 인자의 형태: <일정>")
         return
     conflicts = []
-    mention = 1
     overlap = False
+    global id_num
     while True:
         confirm = input("다른 일정과의 겹침을 허용하겠습니까? >>> ")
         if confirm not in ("Y", "y", "N", "n"):
@@ -769,15 +769,17 @@ def add(schedules: list[Schedule], factor: str):
             new_schedule.allow_overlap = True
             for sch in schedules:
                 if new_schedule.is_conflict(sch):
-                    if mention:
-                        print("오류: 다음 일정과 기간이 겹칩니다!")
-                        mention = 0
-                    print("-> ", sch.number, sch.allow_overlap, sch)
+                    conflicts.append(sch)
                     overlap = True
             if not overlap:
+                new_schedule.schedule_id = id_num + 1
                 schedules.append(new_schedule)
                 print("일정이 추가되었습니다!")
                 save_schedules(schedules)
+                id_num += 1
+            else:
+                print("오류: 다음 일정과 기간이 충돌합니다!")
+                print("-> ", sch.number, sch.allow_overlap, sch)
             return
         else:
             new_schedule.allow_overlap = False
@@ -789,9 +791,11 @@ def add(schedules: list[Schedule], factor: str):
                     print("-> ", sch.number, sch.allow_overlap, sch)
                     overlap = True
             if not overlap:
+                new_schedule.schedule_id = id_num + 1
                 schedules.append(new_schedule)
                 print("일정이 추가되었습니다!")
                 save_schedules(schedules)
+                id_num += 1
             return
 
 
@@ -804,12 +808,12 @@ def reschedule(schedules: list[Schedule], factor: str):
     try:
         r_factors = split_whitespace_1(factor, 1)
         check = 1
-        idx = int(r_factors[0]) - 1
+        target_idx = int(r_factors[0]) - 1
         check = 0
-        if idx < 0:
+        if target_idx < 0:
             print("오류: 일정번호에 양의 정수 값을 입력하세요!")
             return
-        if idx >= len(schedules):
+        if target_idx >= len(schedules):
             print("오류: 입력한 일정번호에 해당하는 일정이 없습니다!")
             return
         if len(r_factors) < 2:
@@ -817,35 +821,85 @@ def reschedule(schedules: list[Schedule], factor: str):
             print("올바른 인자의 형태: <일정번호> <공백열1> <기간>")
             return
 
-        r_sch = r_factors[1]
-        schedule = schedules[idx]
-        prev_number = schedule.number
-        comsch = Schedule(r_sch)
+        target = schedules[target_idx]
+        new_period = Period(r_factors[1])
+        temp_schedule = []
+        repeat = None
+        conflicts = []
+        prev_number = target.number
+        comsch = Schedule(str(new_period))
 
         if comsch.content.value != "":
             print("오류: 조정 명령어의 인자인 기간을 다시 확인해 주십시오!")
             print("올바른 인자의 형태: <일정번호> <공백열1> <기간>")
             return
 
-        overlap = False
-
-        mention = 1
-        for idx1, sch in enumerate(schedules):
-            if comsch.period.overlaps(sch.period):
-                if idx1 == idx:
-                    continue
-                if mention:
-                    print("오류: 다음 일정과 기간이 겹칩니다!")
-                    mention = 0
-                print("-> ", idx1 + 1, sch)
-                overlap = True
-
-        if not overlap:
-            schedule.period = comsch.period
+        # 반복일정일 경우
+        if target.repeat_id != 0:
+            # 기준 일정일 경우
+            if target.repeat_id == target.schedule_id:
+                original_period = target.period
+                target.period = new_period
+                repeater = Repeater(
+                    target, target.repeat_type + " " + str(target.repeat_count)
+                )
+                # 반복 일정의 유형이 옳바르지 않은 경우
+                if not repeater.can_repeat():
+                    print("오류: 반복 유형에서 불가능한 기간입니다!")
+                    target.period = original_period
+                    return
+                temp_schedule = repeater.get_repeat_schedules()
+                temp_schedule.insert(0, target)
+                # 충돌 검사
+                for tmp_sch in temp_schedule:
+                    for sch in schedules:
+                        if sch.repeat_id == tmp_sch.repeat_id:
+                            continue
+                        if tmp_sch.is_conflict(sch):
+                            print("오류: 기존 일정과 충돌합니다!")
+                            return
+                schedules = [s for s in schedules if s.repeat_id != target.repeat_id]
+                schedules.extend(temp_schedule)
+                save_schedules(schedules)
+                print("일정이 다음과 같이 조정되었습니다!")
+                for tmp_sch in temp_schedule:
+                    same_order = schedules[tmp_sch.number - 1] == tmp_sch
+                    if not same_order:
+                        print(
+                            "(주의: 일정 순서의 변동으로 인해 해당 일정의 번호가 변경되었습니다!)"
+                        )
+                        break
+                for sch in schedules:
+                    if sch.repeat_id == target.repeat_id:
+                        print(sch.number, sch.allow_overlap, sch)
+            # 기준일정이 아닐 경우
+            else:
+                print("오류: 기준 일정이 아닙니다! 기준 일정은 아래의 일정입니다.")
+                for sch in schedules:
+                    if sch.schedule_id == target.repeat_id:
+                        print(sch.number, sch.allow_overlap, sch)
+                        break
+        # 반복일정이 아닐 경우
+        else:
+            original_period = target.period
+            target.period = new_period
+            for sch in schedules:
+                if target.is_conflict(sch):
+                    conflicts.append(sch)
+            if conflicts:
+                print("오류: 다음 일정과 기간이 충돌합니다!")
+                for conflict_sch in conflicts:
+                    print(
+                        "-> ",
+                        conflict_sch.number,
+                        conflict_sch.allow_overlap,
+                        conflict_sch,
+                    )
+                    target.period = original_period
+                return
             save_schedules(schedules)
             print("일정이 다음과 같이 조정되었습니다!")
-
-            next_number = schedule.number
+            next_number = target.number
 
             same_order = prev_number == next_number
 
@@ -1113,7 +1167,7 @@ def main_prompt():
         # target.allow_overlap = False
         # target.schedule_id = 15
 
-        # repeater = Repeater(target, "m 100")
+        # repeater = Repeater(target, "m 5")
 
         # print("can repeat")
         # print(repeater.can_repeat())
@@ -1123,7 +1177,7 @@ def main_prompt():
 
         # for tmp_schedule in tmp:
         #     print(
-        #         f"{tmp_schedule}, {tmp_schedule.allow_overlap}, {tmp_schedule.repeat_id}"
+        #         f"{tmp_schedule}, {tmp_schedule.schedule_id}, {tmp_schedule.repeat_id}, {tmp_schedule.allow_overlap}, {tmp_schedule.repeat_id}"
         #     )
 
         # endregion
