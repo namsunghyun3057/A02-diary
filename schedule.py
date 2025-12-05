@@ -1026,6 +1026,100 @@ def search(schedules: list[Schedule], factor: str):
         else:
             print_schedules(found_schedules)
 
+def period(schedules: list[Schedule], factor: str):
+    
+    global id_num 
+
+    if not factor:
+        print("오류: 반복 명령어의 인자를 다시 확인해 주십시오!")
+        print("올바른 인자의 형태: <일정번호> <공백열1> <반복유형> <공백열1> <반복횟수>")
+        return
+
+    try:
+        parts = split_whitespace_1(factor, 1)
+        
+        if len(parts) != 2:
+             print("오류: 반복 명령어의 인자를 다시 확인해 주십시오!")
+             print("올바른 인자의 형태: <일정번호> <공백열1> <반복유형> <공백열1> <반복횟수>")
+             return
+
+        target_idx_str = parts[0]
+        repeater_arg = parts[1]
+
+        target_idx = int(target_idx_str) - 1
+        
+        if target_idx < 0:
+            print("오류: 일정번호에 양의 정수 값을 입력하세요!")
+            return
+        if target_idx >= len(schedules):
+            print("오류: 입력한 번호에 해당하는 일정이 없습니다!")
+            return
+            
+        target = schedules[target_idx]
+
+        repeater = Repeater(target, repeater_arg)
+
+        # [확인 1] 이미 반복 그룹에 속한 일정인지 확인
+        if target.repeat_id > 0:
+            print("오류: 반복 일정은 반복할 수 없습니다!")
+            return
+
+        # [확인 2] 반복 가능 여부 확인
+        if not repeater.can_repeat():
+            print("오류: 해당 일정의 기간은 반복 유형에서 불가능한 기간입니다!")
+            return
+
+        temp_schedules = repeater.get_repeat_schedules()
+        if not temp_schedules:
+            print("오류: 반복 일정을 생성하지 못했습니다!")
+            return
+
+        # [확인 3] 충돌 검사
+        conflicts = []
+        for temp_sch in temp_schedules:
+            for existing_sch in schedules:
+                if temp_sch.period.overlaps(existing_sch.period):
+                    conflicts.append(existing_sch)
+                    
+        if conflicts:
+            print("오류: 다음 일정과 기간이 충돌합니다!")
+            conflict_sch = conflicts[0]
+            print(f"{conflict_sch.number} {conflict_sch}")
+            return
+
+        # [모든 확인 통과 시]
+        
+        if target.schedule_id == 0:
+            id_num += 1
+            target.schedule_id = id_num
+            
+        target.repeat_id = target.schedule_id
+        target.repeat_type = repeater.repeat_type
+        target.repeat_count = repeater.repeat_count
+
+        for new_sch in temp_schedules:
+            id_num += 1
+            new_sch.schedule_id = id_num
+            new_sch.repeat_id = target.repeat_id
+            new_sch.allow_overlap = target.allow_overlap
+            
+        schedules.extend(temp_schedules)
+        save_schedules(schedules)
+        
+        print(f"일정이 다음과 같이 반복되었습니다!")
+        
+        display_list = [target] + temp_schedules
+        print_schedules(display_list)
+
+    except ValueError as e:
+        if "Repeater" in str(e) or "repeat" in str(e):
+             print(f"오류: 반복 설정이 잘못되었습니다. ({e})")
+        elif "인자 개수" in str(e):
+             print("오류: 반복 명령어의 인자 개수를 다시 확인해 주십시오!")
+        else:
+             print("오류: 일정번호에 문자가 올 수 없습니다!")
+    except Exception as e:
+        print(f"오류: 반복 일정을 추가하는 중 문제가 발생했습니다! ({e})")
 
 # endregion
 
@@ -1169,6 +1263,10 @@ def main_prompt():
         # 변경 기능
         elif cmd in change_command_list:
             change(schedules, factor)
+
+        # 반복 기능
+        elif cmd in period_command_list:
+            period(schedules, factor)
 
         # 종료 기능
         elif cmd in quit_command_list:
