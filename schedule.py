@@ -707,9 +707,9 @@ def save_schedules(schedules: list[Schedule]):
 
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         for sch in schedules:
-            if sch.allow_overlap == "y":
+            if sch.allow_overlap == True:
                 sch.allow_overlap = "Y"
-            if sch.allow_overlap == "n":
+            if sch.allow_overlap == False:
                 sch.allow_overlap = "N"
             if sch.repeat_type == "m":
                 sch.repeat_type = "M"
@@ -758,21 +758,41 @@ def add(schedules: list[Schedule], factor: str):
         print("오류: 추가 명령어의 인자인 일정을 다시 확인해 주십시오!")
         print("올바른 인자의 형태: <일정>")
         return
-
+    conflicts = []
     mention = 1
     overlap = False
-    for idx, sch in enumerate(schedules):
-        if new_schedule.period.overlaps(sch.period):
-            if mention:
-                print("오류: 다음 일정과 기간이 겹칩니다!")
-                mention = 0
-            print("-> ", idx + 1, sch)
-            overlap = True
-    if not overlap:
-        schedules.append(new_schedule)
-        print("일정이 추가되었습니다!")
-        save_schedules(schedules)
-    return
+    while True:
+        confirm = input("다른 일정과의 겹침을 허용하겠습니까? >>> ")
+        if confirm not in ("Y", "y", "N", "n"):
+            print("오류: 인자가 잘못되었습니다!")
+        elif confirm in ("Y", "y"):
+            new_schedule.allow_overlap = True
+            for sch in schedules:
+                if new_schedule.is_conflict(sch):
+                    if mention:
+                        print("오류: 다음 일정과 기간이 겹칩니다!")
+                        mention = 0
+                    print("-> ", sch.number, sch.allow_overlap, sch)
+                    overlap = True
+            if not overlap:
+                schedules.append(new_schedule)
+                print("일정이 추가되었습니다!")
+                save_schedules(schedules)
+            return
+        else:
+            new_schedule.allow_overlap = False
+            for sch in schedules:
+                if new_schedule.is_conflict(sch):
+                    if mention:
+                        print("오류: 다음 일정과 기간이 겹칩니다!")
+                        mention = 0
+                    print("-> ", sch.number, sch.allow_overlap, sch)
+                    overlap = True
+            if not overlap:
+                schedules.append(new_schedule)
+                print("일정이 추가되었습니다!")
+                save_schedules(schedules)
+            return
 
 
 def reschedule(schedules: list[Schedule], factor: str):
