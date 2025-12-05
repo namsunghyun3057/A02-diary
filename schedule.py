@@ -810,6 +810,7 @@ def reschedule(schedules: list[Schedule], factor: str):
         check = 1
         target_idx = int(r_factors[0]) - 1
         check = 0
+        global id_num
         if target_idx < 0:
             print("오류: 일정번호에 양의 정수 값을 입력하세요!")
             return
@@ -859,6 +860,9 @@ def reschedule(schedules: list[Schedule], factor: str):
                             print("오류: 기존 일정과 충돌합니다!")
                             return
                 schedules = [s for s in schedules if s.repeat_id != target.repeat_id]
+                for sch in temp_schedule:
+                    sch.schedule_id = id_num + 1
+                    id_num += 1
                 schedules.extend(temp_schedule)
                 save_schedules(schedules)
                 print("일정이 다음과 같이 조정되었습니다!")
