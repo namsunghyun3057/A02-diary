@@ -592,15 +592,19 @@ class Repeater:
                 # 현행 그레고리력에 포함되지 않음
                 continue
 
-            new_schedule = copy.deepcopy(self.base_schedule)
+            new_period = Period(f"{self.base_schedule.period}")
 
-            new_schedule.period.start.date.year.value = sy
-            new_schedule.period.start.date.month.value = sm
-            new_schedule.period.start.date.day.value = sd
+            new_period.start.date.year.value = sy
+            new_period.start.date.month.value = sm
+            new_period.start.date.day.value = sd
 
-            new_schedule.period.end.date.year.value = ey
-            new_schedule.period.end.date.month.value = em
-            new_schedule.period.end.date.day.value = ed
+            new_period.end.date.year.value = ey
+            new_period.end.date.month.value = em
+            new_period.end.date.day.value = ed
+
+            new_content = Content(self.base_schedule.content.value)
+
+            new_schedule = Schedule(f"{new_period} {new_content}")
 
             new_schedule.allow_overlap = self.base_schedule.allow_overlap
             new_schedule.repeat_id = self.base_schedule.schedule_id
@@ -1152,6 +1156,38 @@ def update_schedule_number(schedules: list[Schedule]):
 # endregion
 
 
+# region 디버깅 함수
+def repeat_test(schedules: list[Schedule]):
+    target = Schedule(f"{schedules[0]}")
+
+    print(f"target: {target}")
+
+    target.period.start.date.year.value = 1
+    target.period.end.date.year.value = 1
+    target.content.value = "111"
+    target.allow_overlap = False
+    target.schedule_id = 15
+
+    repeater = Repeater(target, "m 15")
+
+    print("can repeat")
+    print(repeater.can_repeat())
+
+    print("test target")
+    print(target)
+
+    print("get repeat schedules:")
+    tmp = repeater.get_repeat_schedules()
+
+    for tmp_schedule in tmp:
+        print(
+            f"{tmp_schedule}, {tmp_schedule.schedule_id}, {tmp_schedule.repeat_id}, {tmp_schedule.allow_overlap}, {tmp_schedule.repeat_id}"
+        )
+
+
+# endregion
+
+
 # region 메인 프롬프트
 def main_prompt():
     is_valid = check_data_file()
@@ -1161,30 +1197,8 @@ def main_prompt():
     while True:
         # 일정이 수정되면 index 값이 변경되어야해서 while문 안으로 load_schedules함수를 넣었습니다.
         schedules = load_schedules()
-        # print_schedules(schedules)
-        # # region 반복자 테스트
 
-        # target = schedules[0]
-        # print("target")
-        # print(target)
-
-        # target.allow_overlap = False
-        # target.schedule_id = 15
-
-        # repeater = Repeater(target, "m 5")
-
-        # print("can repeat")
-        # print(repeater.can_repeat())
-
-        # print("get repeat schedules:")
-        # tmp = repeater.get_repeat_schedules()
-
-        # for tmp_schedule in tmp:
-        #     print(
-        #         f"{tmp_schedule}, {tmp_schedule.schedule_id}, {tmp_schedule.repeat_id}, {tmp_schedule.allow_overlap}, {tmp_schedule.repeat_id}"
-        #     )
-
-        # endregion
+        # repeat_test(schedules)  # 리피터 테스트
 
         prompt = input(">>> ")
         prompt = strip_whitespace_0(prompt)
