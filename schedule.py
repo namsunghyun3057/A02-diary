@@ -850,6 +850,9 @@ def reschedule(schedules: list[Schedule], factor: str):
                     target.period = original_period
                     return
                 temp_schedule = repeater.get_repeat_schedules()
+                for sch in temp_schedule:
+                    sch.schedule_id = id_num + 1
+                    id_num += 1
                 temp_schedule.insert(0, target)
                 # 충돌 검사
                 for tmp_sch in temp_schedule:
@@ -860,9 +863,6 @@ def reschedule(schedules: list[Schedule], factor: str):
                             print("오류: 기존 일정과 충돌합니다!")
                             return
                 schedules = [s for s in schedules if s.repeat_id != target.repeat_id]
-                for sch in temp_schedule:
-                    sch.schedule_id = id_num + 1
-                    id_num += 1
                 schedules.extend(temp_schedule)
                 save_schedules(schedules)
                 print("일정이 다음과 같이 조정되었습니다!")
