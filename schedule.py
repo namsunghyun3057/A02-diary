@@ -686,7 +686,11 @@ def load_schedules() -> list[Schedule]:
                         + parts[15]
                     )
                     sch = Schedule(schedule)
-                    sch.allow_overlap = parts[0]
+                    if parts[0] == "Y":
+                        sch.allow_overlap = True
+                    else:
+                        sch.allow_overlap = False
+
                     sch.schedule_id = int(parts[1])
                     sch.repeat_id = int(parts[2])
                     if parts[3] != "-":
@@ -1077,7 +1081,7 @@ def delete(schedules: list[Schedule], factor: str):
                     
                 else: 
                     schedules.pop(idx)
-                    print(f"일정 [{target.number} {target}]이(가) 삭제되었습니다!")
+                    print(f"일정이 삭제되었습니다!")
                 
                 save_schedules(schedules)
                 break
@@ -1106,23 +1110,35 @@ def view(schedules: list[Schedule], factor: str):
     if not factor:
         print_schedules(schedules)
     else:
-        try:
-            schedule_time = ScheduleTime(factor)
-            search_period = schedule_time.to_period()
+        if factor.isdigit():
+            idx = int(factor) - 1
+            
+            if idx < 0:
+                print("오류: 일정번호에 양의 정수 값을 입력하세요!")
+                return
+            if idx >= len(schedules):
+                print("오류: 입력한 번호에 해당하는 일정이 없습니다!")
+                return
+            print_schedules([schedules[idx]])
+        else:
 
-            found_schedules = [
-                sch for sch in schedules if sch.period.overlaps(search_period)
-            ]
+            try:
+                schedule_time = ScheduleTime(factor)
+                search_period = schedule_time.to_period()
 
-            if not found_schedules:
-                print("열람된 일정이 존재하지 않습니다!")
-            else:
-                print_schedules(found_schedules)
+                found_schedules = [
+                    sch for sch in schedules if sch.period.overlaps(search_period)
+                ]
 
-        except ValueError as e:
-            print(f"오류: 열람 명령어의 인자인 일정시간을 다시 확인해 주십시오!")
-            print("올바른 인자의 형태: 없거나 <일정시간>")
-            # print(f"세부 오류: {e}")
+                if not found_schedules:
+                    print("열람된 일정이 존재하지 않습니다!")
+                else:
+                    print_schedules(found_schedules)
+
+            except ValueError as e:
+                print(f"오류: 열람 명령어의 인자인 일정시간을 다시 확인해 주십시오!")
+                print("올바른 인자의 형태: 없거나 <일정시간>")
+                # print(f"세부 오류: {e}")
 
 
 def search(schedules: list[Schedule], factor: str):
@@ -1274,23 +1290,23 @@ def print_command_list():
     print(
         "--------------------------------------------------------------------------------"
     )
-    print("삭제 | 열람 | 검색 | 조정 | 변경 | 추가 | 종료")
+    print("삭제 | 열람 | 검색 | 조정 | 변경 | 추가 | 종료 | 반복")
     print(
         "--------------------------------------------------------------------------------"
     )
-    print("ㅅㅈ | ㅇㄹ | ㄱㅅ | ㅈㅈ | ㅂㄱ | ㅊㄱ | ㅈㄹ")
+    print("ㅅㅈ | ㅇㄹ | ㄱㅅ | ㅈㅈ | ㅂㄱ | ㅊㄱ | ㅈㄹ | ㅂㅂ")
     print(
         "--------------------------------------------------------------------------------"
     )
-    print("delete | view | search | reschedule | change | add | quit")
+    print("delete | view | search | reschedule | change | add | quit | period")
     print(
         "--------------------------------------------------------------------------------"
     )
-    print("d | v | s | r | c | a | q")
+    print("d | v | s | r | c | a | q | p")
     print(
         "--------------------------------------------------------------------------------"
     )
-    print("- | # | / | ! | @ | + | .")
+    print("- | # | / | ! | @ | + | . | &")
     print(
         "--------------------------------------------------------------------------------"
     )
