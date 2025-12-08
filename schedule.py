@@ -1285,7 +1285,7 @@ def print_schedules(schedules: list[Schedule]):
     else:
         sort_schedule(schedules)
         for sch in schedules:
-            print(f"{sch.number} {sch.allow_overlap} {sch}")
+            print(f"{sch.number} {'T' if sch.allow_overlap else 'F'} {sch}")
 
 
 def print_command_list():
