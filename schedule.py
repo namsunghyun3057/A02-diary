@@ -719,6 +719,11 @@ def save_schedules(schedules: list[Schedule]):
                 sch.allow_overlap = "Y"
             if sch.allow_overlap == False:
                 sch.allow_overlap = "N"
+            # reschedule을 위한 조건문
+            if sch.allow_overlap == "n":
+                sch.allow_overlap = "N"
+            if sch.allow_overlap == "y":
+                sch.allow_overlap = "Y"
             if sch.repeat_type == "m":
                 sch.repeat_type = "M"
             if sch.repeat_type == "y":
@@ -919,11 +924,12 @@ def reschedule(schedules: list[Schedule], factor: str):
                 print(
                     "(주의: 일정 순서의 변동으로 인해 해당 일정의 번호가 변경되었습니다!)"
                 )
-            for idx2, sch in enumerate(schedules):
-                if sch.period.start.to_datetime() == comsch.period.start.to_datetime():
-                    print(f"{idx2 + 1} {"T" if sch.allow_overlap else "F"} {sch}")
+            for sch in schedules:
+                if sch.schedule_id == target.schedule_id:
+                    print(
+                        f"{sch.number} {"T" if sch.allow_overlap=="Y" else "F"} {sch}"
+                    )
                     break
-            return
 
     except ValueError:
         try:
