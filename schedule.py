@@ -769,6 +769,7 @@ def add(schedules: list[Schedule], factor: str):
     conflicts = []
     overlap = False
     global id_num
+    mention = 1
     while True:
         confirm = input("다른 일정과의 겹침을 허용하겠습니까? >>> ")
         if confirm not in ("Y", "y", "N", "n"):
@@ -796,7 +797,7 @@ def add(schedules: list[Schedule], factor: str):
                     if mention:
                         print("오류: 다음 일정과 기간이 겹칩니다!")
                         mention = 0
-                    print("-> ", sch.number, sch.allow_overlap, sch)
+                    print(f"-> {sch.number} {'T' if sch.allow_overlap else 'F'} {sch}")
                     overlap = True
             if not overlap:
                 new_schedule.schedule_id = id_num + 1
@@ -902,10 +903,7 @@ def reschedule(schedules: list[Schedule], factor: str):
                 print("오류: 다음 일정과 기간이 충돌합니다!")
                 for conflict_sch in conflicts:
                     print(
-                        "-> ",
-                        conflict_sch.number,
-                        conflict_sch.allow_overlap,
-                        conflict_sch,
+                        f"-> {conflict_sch.number} {"T" if conflict_sch.allow_overlap else "F"} {conflict_sch}"
                     )
                     target.period = original_period
                 return
@@ -991,7 +989,7 @@ def change(schedules: list[Schedule], factor: str):
             print("오류: 기준 일정의 일정번호로 다시 시도해 주십시오!")
             for sch in schedules:
                 if sch.schedule_id == target.repeat_id:
-                    print("-> ", sch.number, sch.allow_overlap, sch)
+                    print(f"-> {sch.number} {'T' if sch.allow_overlap else 'F'} {sch}")
 
     except ValueError:
         try:
@@ -1011,7 +1009,6 @@ def delete(schedules: list[Schedule], factor: str):
     if not schedules:
         print("기록된 일정이 없어 삭제할 수 없습니다!")
         return
-        
 
     try:
         idx = int(factor) - 1
@@ -1022,7 +1019,6 @@ def delete(schedules: list[Schedule], factor: str):
         if idx >= len(schedules):
             print("오류: 입력한 번호에 해당하는 일정이 없습니다!")
             return
-        
 
         target = schedules[idx]
 
@@ -1034,10 +1030,12 @@ def delete(schedules: list[Schedule], factor: str):
         if str(target.schedule_id).isdigit():
             current_schedule_id = int(target.schedule_id)
 
-        is_repeat_schedule = current_repeat_id > 0 # [분기 1] 반복 일정 확인
-        if is_repeat_schedule: 
-            is_base_schedule = (current_repeat_id == current_schedule_id) # [분기 2] 기준 일정 확인
-            if not is_base_schedule: 
+        is_repeat_schedule = current_repeat_id > 0  # [분기 1] 반복 일정 확인
+        if is_repeat_schedule:
+            is_base_schedule = (
+                current_repeat_id == current_schedule_id
+            )  # [분기 2] 기준 일정 확인
+            if not is_base_schedule:
                 print("오류: 기준 일정의 일정번호로 다시 시도해 주십시오!")
 
                 base_sch = None
@@ -1049,7 +1047,7 @@ def delete(schedules: list[Schedule], factor: str):
                     if check_sch_id == current_repeat_id:
                         base_sch = sch
                         break
-                
+
                 if base_sch:
                     print(f"기준 일정: {base_sch.number} {base_sch}")
                 else:
@@ -1064,10 +1062,10 @@ def delete(schedules: list[Schedule], factor: str):
             confirm = confirm.upper()
 
             if confirm == "Y":
-                if is_repeat_schedule: 
+                if is_repeat_schedule:
                     target_repeat_id = current_repeat_id
                     deleted_count = 0
-                    
+
                     for i in range(len(schedules) - 1, -1, -1):
                         check_repeat_id = 0
                         if str(schedules[i].repeat_id).isdigit():
@@ -1076,13 +1074,13 @@ def delete(schedules: list[Schedule], factor: str):
                         if check_repeat_id == target_repeat_id:
                             schedules.pop(i)
                             deleted_count += 1
-                            
+
                     print(f"반복 일정 그룹 {deleted_count}건이 모두 삭제되었습니다!")
-                    
-                else: 
+
+                else:
                     schedules.pop(idx)
                     print(f"일정이 삭제되었습니다!")
-                
+
                 save_schedules(schedules)
                 break
             elif confirm == "N":
@@ -1112,7 +1110,7 @@ def view(schedules: list[Schedule], factor: str):
     else:
         if factor.isdigit():
             idx = int(factor) - 1
-            
+
             if idx < 0:
                 print("오류: 일정번호에 양의 정수 값을 입력하세요!")
                 return
@@ -1160,22 +1158,27 @@ def search(schedules: list[Schedule], factor: str):
         else:
             print_schedules(found_schedules)
 
+
 def period(schedules: list[Schedule], factor: str):
-    
-    global id_num 
+
+    global id_num
 
     if not factor:
         print("오류: 반복 명령어의 인자를 다시 확인해 주십시오!")
-        print("올바른 인자의 형태: <일정번호> <공백열1> <반복유형> <공백열1> <반복횟수>")
+        print(
+            "올바른 인자의 형태: <일정번호> <공백열1> <반복유형> <공백열1> <반복횟수>"
+        )
         return
 
     try:
         parts = split_whitespace_1(factor, 1)
-        
+
         if len(parts) != 2:
-             print("오류: 반복 명령어의 인자를 다시 확인해 주십시오!")
-             print("올바른 인자의 형태: <일정번호> <공백열1> <반복유형> <공백열1> <반복횟수>")
-             return
+            print("오류: 반복 명령어의 인자를 다시 확인해 주십시오!")
+            print(
+                "올바른 인자의 형태: <일정번호> <공백열1> <반복유형> <공백열1> <반복횟수>"
+            )
+            return
 
         target_idx_str = parts[0]
         repeater_arg = parts[1]
@@ -1183,16 +1186,16 @@ def period(schedules: list[Schedule], factor: str):
         if not target_idx_str.isdigit():
             print("오류: 일정번호에 문자가 올 수 없습니다!")
             return
-        
+
         target_idx = int(target_idx_str) - 1
-        
+
         if target_idx < 0:
             print("오류: 일정번호에 양의 정수 값을 입력하세요!")
             return
         if target_idx >= len(schedules):
             print("오류: 입력한 번호에 해당하는 일정이 없습니다!")
             return
-            
+
         target = schedules[target_idx]
 
         repeater = Repeater(target, repeater_arg)
@@ -1223,7 +1226,7 @@ def period(schedules: list[Schedule], factor: str):
             for existing_sch in schedules:
                 if temp_sch.period.overlaps(existing_sch.period):
                     conflicts.append(existing_sch)
-                    
+
         if conflicts:
             print("오류: 다음 일정과 기간이 충돌합니다!")
             conflict_sch = conflicts[0]
@@ -1236,11 +1239,11 @@ def period(schedules: list[Schedule], factor: str):
             current_schedule_id = target.schedule_id
         elif isinstance(target.schedule_id, str) and target.schedule_id.isdigit():
             current_schedule_id = int(target.schedule_id)
-        
+
         if current_schedule_id == 0:
             id_num += 1
             target.schedule_id = id_num
-            
+
         target.repeat_id = target.schedule_id
         target.repeat_type = repeater.repeat_type
         target.repeat_count = repeater.repeat_count
@@ -1250,24 +1253,25 @@ def period(schedules: list[Schedule], factor: str):
             new_sch.schedule_id = id_num
             new_sch.repeat_id = target.repeat_id
             new_sch.allow_overlap = target.allow_overlap
-            
+
         schedules.extend(temp_schedules)
         save_schedules(schedules)
-        
+
         print(f"일정이 다음과 같이 반복되었습니다!")
-        
+
         display_list = [target] + temp_schedules
         print_schedules(display_list)
 
     except ValueError as e:
         if "Repeater" in str(e) or "repeat" in str(e):
-             print(f"오류: 반복 설정이 잘못되었습니다! ({e})")
+            print(f"오류: 반복 설정이 잘못되었습니다! ({e})")
         elif "인자 개수" in str(e):
-             print("오류: 반복 명령어의 인자 개수를 다시 확인해 주십시오!")
+            print("오류: 반복 명령어의 인자 개수를 다시 확인해 주십시오!")
         else:
-             print("오류: 잘못된 값이 입력되었습니다!")
+            print("오류: 잘못된 값이 입력되었습니다!")
     except Exception as e:
         print(f"오류: 반복 일정을 추가하는 중 문제가 발생했습니다! ({e})")
+
 
 # endregion
 
