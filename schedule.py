@@ -897,6 +897,8 @@ def reschedule(schedules: list[Schedule], factor: str):
             original_period = target.period
             target.period = new_period
             for sch in schedules:
+                if sch.schedule_id == target.schedule_id:
+                    continue
                 if target.is_conflict(sch):
                     conflicts.append(sch)
             if conflicts:
@@ -1055,7 +1057,7 @@ def delete(schedules: list[Schedule], factor: str):
                 return
 
         # [서브 프롬프트]
-        print(f"{target.number} {target}")
+        print(f"{target.number} {"T" if target.allow_overlap else "F"} {target}")
 
         while True:
             confirm = input("정말 삭제하시겠습니까? (Y/N)>>> ")
