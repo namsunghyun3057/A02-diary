@@ -921,7 +921,7 @@ def reschedule(schedules: list[Schedule], factor: str):
                 )
             for idx2, sch in enumerate(schedules):
                 if sch.period.start.to_datetime() == comsch.period.start.to_datetime():
-                    print(idx2 + 1, sch)
+                    print(f"{idx2 + 1} {"T" if sch.allow_overlap else "F"} {sch}")
                     break
             return
 
