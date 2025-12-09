@@ -858,6 +858,10 @@ def reschedule(schedules: list[Schedule], factor: str):
                 repeater = Repeater(
                     target, target.repeat_type + " " + str(target.repeat_count)
                 )
+                prev_numbers = []
+                for sch in schedules:
+                    if sch.repeat_id == target.repeat_id:
+                        prev_numbers.append(sch.number)
                 # 반복 일정의 유형이 옳바르지 않은 경우
                 if not repeater.can_repeat():
                     print("오류: 반복 유형에서 불가능한 기간입니다!")
@@ -880,8 +884,8 @@ def reschedule(schedules: list[Schedule], factor: str):
                 schedules.extend(temp_schedule)
                 save_schedules(schedules)
                 print("일정이 다음과 같이 조정되었습니다!")
-                for tmp_sch in temp_schedule:
-                    same_order = schedules[tmp_sch.number - 1] == tmp_sch
+                for tmp_sch, prev_num in zip(temp_schedule, prev_numbers):
+                    same_order = tmp_sch.number == prev_num
                     if not same_order:
                         print(
                             "(주의: 일정 순서의 변동으로 인해 해당 일정의 번호가 변경되었습니다!)"
