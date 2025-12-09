@@ -996,7 +996,8 @@ def change(schedules: list[Schedule], factor: str):
             for idx, sch in enumerate(schedules):
                 if sch.repeat_id == target.repeat_id:
                     sch.content = Content(new_content)
-                    print(idx + 1, sch.allow_overlap, sch)
+                    print(f"{idx + 1} {"Y" if sch.allow_overlap else "N"} {sch}")
+            save_schedules(schedules)
         else:
             print("오류: 기준 일정의 일정번호로 다시 시도해 주십시오!")
             for sch in schedules:
