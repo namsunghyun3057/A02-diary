@@ -927,7 +927,7 @@ def reschedule(schedules: list[Schedule], factor: str):
             for sch in schedules:
                 if sch.schedule_id == target.schedule_id:
                     print(
-                        f"{sch.number} {"T" if sch.allow_overlap=="Y" else "F"} {sch}"
+                        f"{sch.number} {"Y" if sch.allow_overlap=="Y" else "N"} {sch}"
                     )
                     break
 
