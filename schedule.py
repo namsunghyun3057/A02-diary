@@ -889,13 +889,13 @@ def reschedule(schedules: list[Schedule], factor: str):
                         break
                 for sch in schedules:
                     if sch.repeat_id == target.repeat_id:
-                        print(sch.number, sch.allow_overlap, sch)
+                        print(f"{sch.number} {"Y" if sch.allow_overlap else "N"} {sch}")
             # 기준일정이 아닐 경우
             else:
                 print("오류: 기준 일정이 아닙니다! 기준 일정은 아래의 일정입니다.")
                 for sch in schedules:
                     if sch.schedule_id == target.repeat_id:
-                        print(sch.number, sch.allow_overlap, sch)
+                        print(f"{sch.number} {"Y" if sch.allow_overlap else "N"} {sch}")
                         break
         # 반복일정이 아닐 경우
         else:
