@@ -1175,6 +1175,16 @@ def period(schedules: list[Schedule], factor: str):
     try:
         parts = split_whitespace_1(factor, 1)
 
+        target_idx_str = parts[0]
+        if not target_idx_str.lstrip("-").isdigit():
+            print("오류: 일정번호에 문자가 올 수 없습니다!")
+            return
+
+        target_idx_check = int(target_idx_str)
+        if target_idx_check < 1:
+            print("오류: 일정번호에 양의 정수 값을 입력하세요!")
+            return
+
         if len(parts) != 2:
             print("오류: 반복 명령어의 인자를 다시 확인해 주십시오!")
             print(
@@ -1182,18 +1192,9 @@ def period(schedules: list[Schedule], factor: str):
             )
             return
 
-        target_idx_str = parts[0]
+        target_idx = target_idx_check - 1
         repeater_arg = parts[1]
 
-        if not target_idx_str.isdigit():
-            print("오류: 일정번호에 문자가 올 수 없습니다!")
-            return
-
-        target_idx = int(target_idx_str) - 1
-
-        if target_idx < 0:
-            print("오류: 일정번호에 양의 정수 값을 입력하세요!")
-            return
         if target_idx >= len(schedules):
             print("오류: 입력한 번호에 해당하는 일정이 없습니다!")
             return
