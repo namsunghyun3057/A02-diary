@@ -802,7 +802,7 @@ def add(schedules: list[Schedule], factor: str):
                     if mention:
                         print("오류: 다음 일정과 기간이 겹칩니다!")
                         mention = 0
-                    print(f"-> {sch.number} {'T' if sch.allow_overlap else 'F'} {sch}")
+                    print(f"-> {sch.number} {'Y' if sch.allow_overlap else 'N'} {sch}")
                     overlap = True
             if not overlap:
                 new_schedule.schedule_id = id_num + 1
@@ -910,7 +910,7 @@ def reschedule(schedules: list[Schedule], factor: str):
                 print("오류: 다음 일정과 기간이 충돌합니다!")
                 for conflict_sch in conflicts:
                     print(
-                        f"-> {conflict_sch.number} {"T" if conflict_sch.allow_overlap else "F"} {conflict_sch}"
+                        f"-> {conflict_sch.number} {"Y" if conflict_sch.allow_overlap else "N"} {conflict_sch}"
                     )
                     target.period = original_period
                 return
@@ -997,7 +997,7 @@ def change(schedules: list[Schedule], factor: str):
             print("오류: 기준 일정의 일정번호로 다시 시도해 주십시오!")
             for sch in schedules:
                 if sch.schedule_id == target.repeat_id:
-                    print(f"-> {sch.number} {'T' if sch.allow_overlap else 'F'} {sch}")
+                    print(f"-> {sch.number} {'Y' if sch.allow_overlap else 'N'} {sch}")
 
     except ValueError:
         try:
@@ -1010,6 +1010,7 @@ def change(schedules: list[Schedule], factor: str):
 
 def delete(schedules: list[Schedule], factor: str):
     if not factor:
+
         print("오류: 삭제 명령어의 인자인 일정번호를 다시 확인해 주십시오!")
         print("올바른 인자의 형태: <일정번호>")
         return
@@ -1063,7 +1064,7 @@ def delete(schedules: list[Schedule], factor: str):
                 return
 
         # [서브 프롬프트]
-        print(f"{target.number} {"T" if target.allow_overlap else "F"} {target}")
+        print(f"{target.number} {"Y" if target.allow_overlap else "N"} {target}")
 
         while True:
             confirm = input("정말 삭제하시겠습니까? (Y/N)>>> ")
@@ -1293,7 +1294,7 @@ def print_schedules(schedules: list[Schedule]):
     else:
         sort_schedule(schedules)
         for sch in schedules:
-            print(f"{sch.number} {'T' if sch.allow_overlap else 'F'} {sch}")
+            print(f"{sch.number} {'Y' if sch.allow_overlap else 'N'} {sch}")
 
 
 def print_command_list():
