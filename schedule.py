@@ -1122,35 +1122,23 @@ def view(schedules: list[Schedule], factor: str):
     if not factor:
         print_schedules(schedules)
     else:
-        if factor.isdigit():
-            idx = int(factor) - 1
+        try:
+            schedule_time = ScheduleTime(factor)
+            search_period = schedule_time.to_period()
 
-            if idx < 0:
-                print("오류: 일정번호에 양의 정수 값을 입력하세요!")
-                return
-            if idx >= len(schedules):
-                print("오류: 입력한 번호에 해당하는 일정이 없습니다!")
-                return
-            print_schedules([schedules[idx]])
-        else:
+            found_schedules = [
+                sch for sch in schedules if sch.period.overlaps(search_period)
+            ]
 
-            try:
-                schedule_time = ScheduleTime(factor)
-                search_period = schedule_time.to_period()
+            if not found_schedules:
+                print("열람된 일정이 존재하지 않습니다!")
+            else:
+                print_schedules(found_schedules)
 
-                found_schedules = [
-                    sch for sch in schedules if sch.period.overlaps(search_period)
-                ]
-
-                if not found_schedules:
-                    print("열람된 일정이 존재하지 않습니다!")
-                else:
-                    print_schedules(found_schedules)
-
-            except ValueError as e:
-                print(f"오류: 열람 명령어의 인자인 일정시간을 다시 확인해 주십시오!")
-                print("올바른 인자의 형태: 없거나 <일정시간>")
-                # print(f"세부 오류: {e}")
+        except ValueError as e:
+            print(f"오류: 열람 명령어의 인자인 일정시간을 다시 확인해 주십시오!")
+            print("올바른 인자의 형태: 없거나 <일정시간>")
+            # print(f"세부 오류: {e}")
 
 
 def search(schedules: list[Schedule], factor: str):
