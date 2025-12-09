@@ -1225,14 +1225,18 @@ def period(schedules: list[Schedule], factor: str):
         # [확인 3] 충돌 검사
         conflicts = []
         for temp_sch in temp_schedules:
+            temp_sch.allow_overlap = target.allow_overlap
+
             for existing_sch in schedules:
-                if temp_sch.period.overlaps(existing_sch.period):
-                    conflicts.append(existing_sch)
+                if temp_sch.is_conflict(existing_sch):
+                    if existing_sch not in conflicts:
+                        conflicts.append(existing_sch)
 
         if conflicts:
             print("오류: 다음 일정과 기간이 충돌합니다!")
-            conflict_sch = conflicts[0]
-            print(f"{conflict_sch.number} {conflict_sch}")
+            for conflict_sch in conflicts:
+                overlap_str = "Y" if conflict_sch.allow_overlap else "N"
+                print(f"-> {conflict_sch.number} {overlap_str} {conflict_sch}")
             return
 
         # [모든 확인 통과 시]
