@@ -863,6 +863,13 @@ def reschedule(schedules: list[Schedule], factor: str):
                 for sch in schedules:
                     if sch.repeat_id == target.repeat_id:
                         prev_numbers.append(sch.number)
+                for sch in schedules:
+                    if sch.repeat_id == target.repeat_id:
+                        continue
+                    if target.is_conflict(sch):
+                        print("오류: 기존 일정과 충돌합니다!")
+                        return
+
                 # 반복 일정의 유형이 옳바르지 않은 경우
                 if not repeater.can_repeat():
                     print("오류: 반복 유형에서 불가능한 기간입니다!")
@@ -872,7 +879,6 @@ def reschedule(schedules: list[Schedule], factor: str):
                 for sch in temp_schedule:
                     sch.schedule_id = id_num + 1
                     id_num += 1
-                temp_schedule.insert(0, target)
                 # 충돌 검사
                 for tmp_sch in temp_schedule:
                     for sch in schedules:
@@ -881,6 +887,7 @@ def reschedule(schedules: list[Schedule], factor: str):
                         if tmp_sch.is_conflict(sch):
                             print("오류: 기존 일정과 충돌합니다!")
                             return
+                temp_schedule.insert(0, target)
                 schedules = [s for s in schedules if s.repeat_id != target.repeat_id]
                 schedules.extend(temp_schedule)
                 save_schedules(schedules)
