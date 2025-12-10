@@ -793,7 +793,8 @@ def add(schedules: list[Schedule], factor: str):
                 id_num += 1
             else:
                 print("오류: 다음 일정과 기간이 충돌합니다!")
-                print("-> ", sch.number, sch.allow_overlap, sch)
+                for sch in conflicts:
+                    print(f"-> {sch.number} {"Y" if sch.allow_overlap else "N"} {sch}")
             return
         else:
             new_schedule.allow_overlap = False
