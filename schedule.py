@@ -1227,9 +1227,8 @@ def period(schedules: list[Schedule], factor: str):
             return
 
         temp_schedules = repeater.get_repeat_schedules()
-        if not temp_schedules:
-            print("오류: 반복 일정을 생성하지 못했습니다!")
-            return
+        if temp_schedules is None:
+            temp_schedules = []
 
         # [확인 3] 충돌 검사
         conflicts = []
