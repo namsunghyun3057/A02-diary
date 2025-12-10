@@ -1123,35 +1123,23 @@ def view(schedules: list[Schedule], factor: str):
     if not factor:
         print_schedules(schedules)
     else:
-        if factor.isdigit():
-            idx = int(factor) - 1
+        try:
+            schedule_time = ScheduleTime(factor)
+            search_period = schedule_time.to_period()
 
-            if idx < 0:
-                print("오류: 일정번호에 양의 정수 값을 입력하세요!")
-                return
-            if idx >= len(schedules):
-                print("오류: 입력한 번호에 해당하는 일정이 없습니다!")
-                return
-            print_schedules([schedules[idx]])
-        else:
+            found_schedules = [
+                sch for sch in schedules if sch.period.overlaps(search_period)
+            ]
 
-            try:
-                schedule_time = ScheduleTime(factor)
-                search_period = schedule_time.to_period()
+            if not found_schedules:
+                print("열람된 일정이 존재하지 않습니다!")
+            else:
+                print_schedules(found_schedules)
 
-                found_schedules = [
-                    sch for sch in schedules if sch.period.overlaps(search_period)
-                ]
-
-                if not found_schedules:
-                    print("열람된 일정이 존재하지 않습니다!")
-                else:
-                    print_schedules(found_schedules)
-
-            except ValueError as e:
-                print(f"오류: 열람 명령어의 인자인 일정시간을 다시 확인해 주십시오!")
-                print("올바른 인자의 형태: 없거나 <일정시간>")
-                # print(f"세부 오류: {e}")
+        except ValueError as e:
+            print(f"오류: 열람 명령어의 인자인 일정시간을 다시 확인해 주십시오!")
+            print("올바른 인자의 형태: 없거나 <일정시간>")
+            # print(f"세부 오류: {e}")
 
 
 def search(schedules: list[Schedule], factor: str):
@@ -1188,6 +1176,16 @@ def period(schedules: list[Schedule], factor: str):
     try:
         parts = split_whitespace_1(factor, 1)
 
+        target_idx_str = parts[0]
+        if not target_idx_str.lstrip("-").isdigit():
+            print("오류: 일정번호에 문자가 올 수 없습니다!")
+            return
+
+        target_idx_check = int(target_idx_str)
+        if target_idx_check < 1:
+            print("오류: 일정번호에 양의 정수 값을 입력하세요!")
+            return
+
         if len(parts) != 2:
             print("오류: 반복 명령어의 인자를 다시 확인해 주십시오!")
             print(
@@ -1195,18 +1193,9 @@ def period(schedules: list[Schedule], factor: str):
             )
             return
 
-        target_idx_str = parts[0]
+        target_idx = target_idx_check - 1
         repeater_arg = parts[1]
 
-        if not target_idx_str.isdigit():
-            print("오류: 일정번호에 문자가 올 수 없습니다!")
-            return
-
-        target_idx = int(target_idx_str) - 1
-
-        if target_idx < 0:
-            print("오류: 일정번호에 양의 정수 값을 입력하세요!")
-            return
         if target_idx >= len(schedules):
             print("오류: 입력한 번호에 해당하는 일정이 없습니다!")
             return
@@ -1238,14 +1227,18 @@ def period(schedules: list[Schedule], factor: str):
         # [확인 3] 충돌 검사
         conflicts = []
         for temp_sch in temp_schedules:
+            temp_sch.allow_overlap = target.allow_overlap
+
             for existing_sch in schedules:
-                if temp_sch.period.overlaps(existing_sch.period):
-                    conflicts.append(existing_sch)
+                if temp_sch.is_conflict(existing_sch):
+                    if existing_sch not in conflicts:
+                        conflicts.append(existing_sch)
 
         if conflicts:
             print("오류: 다음 일정과 기간이 충돌합니다!")
-            conflict_sch = conflicts[0]
-            print(f"{conflict_sch.number} {conflict_sch}")
+            for conflict_sch in conflicts:
+                overlap_str = "Y" if conflict_sch.allow_overlap else "N"
+                print(f"-> {conflict_sch.number} {overlap_str} {conflict_sch}")
             return
 
         # [모든 확인 통과 시]
