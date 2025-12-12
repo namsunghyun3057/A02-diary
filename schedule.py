@@ -715,15 +715,11 @@ def save_schedules(schedules: list[Schedule]):
 
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         for sch in schedules:
+            allow_overlap = None
             if sch.allow_overlap == True:
-                sch.allow_overlap = "Y"
+                allow_overlap = "Y"
             if sch.allow_overlap == False:
-                sch.allow_overlap = "N"
-            # reschedule을 위한 조건문
-            if sch.allow_overlap == "n":
-                sch.allow_overlap = "N"
-            if sch.allow_overlap == "y":
-                sch.allow_overlap = "Y"
+                allow_overlap = "N"
             if sch.repeat_type == "m":
                 sch.repeat_type = "M"
             if sch.repeat_type == "y":
@@ -737,7 +733,7 @@ def save_schedules(schedules: list[Schedule]):
             content = sch.content.value
 
             line = (
-                f"{sch.allow_overlap}\t{sch.schedule_id}\t{sch.repeat_id}\t{t}\t{sch.repeat_count}\t"
+                f"{allow_overlap}\t{sch.schedule_id}\t{sch.repeat_id}\t{t}\t{sch.repeat_count}\t"
                 f"{start.date.year.value}\t{start.date.month.value}\t{start.date.day.value}\t"
                 f"{start.time.hour.value}\t{start.time.minute.value}\t"
                 f"{end.date.year.value}\t{end.date.month.value}\t{end.date.day.value}\t"
@@ -876,9 +872,6 @@ def reschedule(schedules: list[Schedule], factor: str):
                     target.period = original_period
                     return
                 temp_schedule = repeater.get_repeat_schedules()
-                for sch in temp_schedule:
-                    sch.schedule_id = id_num + 1
-                    id_num += 1
                 # 충돌 검사
                 for tmp_sch in temp_schedule:
                     for sch in schedules:
@@ -887,6 +880,9 @@ def reschedule(schedules: list[Schedule], factor: str):
                         if tmp_sch.is_conflict(sch):
                             print("오류: 기존 일정과 충돌합니다!")
                             return
+                for sch in temp_schedule:
+                    sch.schedule_id = id_num + 1
+                    id_num += 1
                 temp_schedule.insert(0, target)
                 schedules = [s for s in schedules if s.repeat_id != target.repeat_id]
                 schedules.extend(temp_schedule)
@@ -901,7 +897,7 @@ def reschedule(schedules: list[Schedule], factor: str):
                         break
                 for sch in schedules:
                     if sch.repeat_id == target.repeat_id:
-                        print(f"{sch.number} {sch.allow_overlap} {sch}")
+                        print(f"{sch.number} {"Y" if sch.allow_overlap else "N"} {sch}")
             # 기준일정이 아닐 경우
             else:
                 print("오류: 기준 일정이 아닙니다! 기준 일정은 아래의 일정입니다.")
@@ -938,7 +934,7 @@ def reschedule(schedules: list[Schedule], factor: str):
                 )
             for sch in schedules:
                 if sch.schedule_id == target.schedule_id:
-                    print(f"{sch.number} {sch.allow_overlap} {sch}")
+                    print(f"{sch.number} {"Y" if sch.allow_overlap else "N"} {sch}")
                     break
 
     except ValueError:
@@ -1295,11 +1291,6 @@ def print_schedules(schedules: list[Schedule]):
     if not schedules:
         pass
     else:
-        for sch in schedules:
-            if sch.allow_overlap == "Y":
-                sch.allow_overlap = True
-            if sch.allow_overlap == "N":
-                sch.allow_overlap = False
         sort_schedule(schedules)
         for sch in schedules:
             print(f"{sch.number} {'Y' if sch.allow_overlap else 'N'} {sch}")
