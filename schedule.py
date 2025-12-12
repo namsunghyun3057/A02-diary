@@ -901,7 +901,7 @@ def reschedule(schedules: list[Schedule], factor: str):
                         break
                 for sch in schedules:
                     if sch.repeat_id == target.repeat_id:
-                        print(f"{sch.number} {"Y" if sch.allow_overlap else "N"} {sch}")
+                        print(f"{sch.number} {sch.allow_overlap} {sch}")
             # 기준일정이 아닐 경우
             else:
                 print("오류: 기준 일정이 아닙니다! 기준 일정은 아래의 일정입니다.")
@@ -938,9 +938,7 @@ def reschedule(schedules: list[Schedule], factor: str):
                 )
             for sch in schedules:
                 if sch.schedule_id == target.schedule_id:
-                    print(
-                        f"{sch.number} {"Y" if sch.allow_overlap=="Y" else "N"} {sch}"
-                    )
+                    print(f"{sch.number} {sch.allow_overlap} {sch}")
                     break
 
     except ValueError:
@@ -1298,6 +1296,11 @@ def print_schedules(schedules: list[Schedule]):
     if not schedules:
         pass
     else:
+        for sch in schedules:
+            if sch.allow_overlap == "Y":
+                sch.allow_overlap = True
+            if sch.allow_overlap == "N":
+                sch.allow_overlap = False
         sort_schedule(schedules)
         for sch in schedules:
             print(f"{sch.number} {'Y' if sch.allow_overlap else 'N'} {sch}")
